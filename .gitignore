@@ -1,0 +1,16 @@
+#geral
+.env
+
+#java
+target/
+*.class
+*.jar
+.idea/
+.vscode/
+
+#logs
+logs/
+
+#Node
+node_modules/
+dist/
