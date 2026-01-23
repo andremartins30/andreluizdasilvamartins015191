@@ -27,7 +27,7 @@ public class ArtistService {
 
     public ArtistResponseDTO salvar(ArtistRequestDTO dto) {
     Artist artist = new Artist();
-    artist.setName(dto.name());
+    artist.setName(dto.getName());
 
     Artist salvo = repository.save(artist);
 
