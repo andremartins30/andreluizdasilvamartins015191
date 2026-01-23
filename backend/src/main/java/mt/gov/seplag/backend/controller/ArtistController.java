@@ -13,22 +13,27 @@ import jakarta.validation.Valid;
 
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
-
+@Tag(name = "Artist", description = "Gerenciamento de artistas")
 @RestController
 @RequestMapping("/api/v1/artists")
 public class ArtistController {
     private final ArtistService service;
 
+
     public ArtistController(ArtistService service) {
         this.service = service;
     }
 
+    @Operation(summary = "Lista todos os artistas")
     @GetMapping
     public List<ArtistResponseDTO> listarTodos() {
         return service.listarTodos();
     }
 
+    @Operation(summary = "Cadastra um novo artista")
     @PostMapping
     public ResponseEntity<ArtistResponseDTO> criar(@Valid @RequestBody ArtistRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.salvar(dto));
