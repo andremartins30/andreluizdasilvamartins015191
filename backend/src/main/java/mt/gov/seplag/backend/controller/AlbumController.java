@@ -1,5 +1,7 @@
 package mt.gov.seplag.backend.controller;
 
+import mt.gov.seplag.backend.web.album.AlbumResponseDTO;
+
 import mt.gov.seplag.backend.domain.album.Album;
 import mt.gov.seplag.backend.service.AlbumService;
 import org.springframework.data.domain.Page;
@@ -17,7 +19,7 @@ public class AlbumController {
     }
 
     @GetMapping
-    public Page<Album> listar(
+    public Page<AlbumResponseDTO> listar(
             @RequestParam(required = false) String artist,
             Pageable pageable
     ) {

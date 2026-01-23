@@ -1,5 +1,8 @@
 package mt.gov.seplag.backend.service;
 
+import mt.gov.seplag.backend.web.artist.ArtistRequestDTO;
+import mt.gov.seplag.backend.web.artist.ArtistResponseDTO;
+
 import mt.gov.seplag.backend.domain.artist.Artist;
 import mt.gov.seplag.backend.domain.artist.ArtistRepository;
 import org.springframework.stereotype.Service;
@@ -15,11 +18,20 @@ public class ArtistService {
         this.repository = repository;
     }
 
-    public List<Artist> listarTodos() {
-        return repository.findAll();
+    public List<ArtistResponseDTO> listarTodos() {
+    return repository.findAll()
+        .stream()
+        .map(a -> new ArtistResponseDTO(a.getId(), a.getName()))
+        .toList();
     }
 
-    public Artist salvar(Artist artist) {
-        return repository.save(artist);
+    public ArtistResponseDTO salvar(ArtistRequestDTO dto) {
+    Artist artist = new Artist();
+    artist.setName(dto.name());
+
+    Artist salvo = repository.save(artist);
+
+    return new ArtistResponseDTO(salvo.getId(), salvo.getName());
+
     }
 }
