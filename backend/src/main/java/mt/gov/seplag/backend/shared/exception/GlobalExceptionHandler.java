@@ -16,15 +16,20 @@ import java.util.List;
     public class GlobalExceptionHandler {
 
         @ExceptionHandler(MethodArgumentNotValidException.class)
-        public ResponseEntity<List<String>> handleValidation(MethodArgumentNotValidException ex) {
+        public ResponseEntity<ApiErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
 
-            List<String> errors = ex.getBindingResult()
+            List<FieldErrorResponse> errors = ex.getBindingResult()
                     .getFieldErrors()
                     .stream()
-                    .map(err -> err.getField() + ": " + err.getDefaultMessage())
+                    .map(err -> new FieldErrorResponse(
+                        err.getField(),
+                        err.getDefaultMessage()
+                    ))
                     .toList();
 
-            return ResponseEntity.badRequest().body(errors);
+            ApiErrorResponse response = new ApiErrorResponse(400, errors);
+
+            return ResponseEntity.badRequest().body(response);
         }
 
     @ExceptionHandler(Exception.class)
