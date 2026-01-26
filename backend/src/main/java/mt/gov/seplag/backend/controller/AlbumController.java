@@ -45,4 +45,20 @@ public class AlbumController {
     public ResponseEntity<AlbumResponseDTO> criar(@Valid @RequestBody AlbumRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.criar(dto));
     }
+
+    @Operation(summary = "Atualiza um álbum existente")
+    @PutMapping("/{id}")
+    public AlbumResponseDTO atualizar(
+            @PathVariable Long id,
+            @Valid @RequestBody AlbumRequestDTO dto
+    ) {
+        return service.atualizar(id, dto);
+    }
+
+    @Operation(summary = "Remove um álbum por ID")
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void remover(@PathVariable Long id) {
+        service.remover(id);
+    }
 }

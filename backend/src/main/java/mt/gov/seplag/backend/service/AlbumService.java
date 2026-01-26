@@ -58,6 +58,28 @@ public class AlbumService {
         return toResponse(salvo);
     }
 
+    public AlbumResponseDTO atualizar(Long id, AlbumRequestDTO dto) {
+        Album album = albumRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Álbum não encontrado"));
+
+        Artist artist = artistRepository.findById(dto.artistId())
+                .orElseThrow(() -> new NotFoundException("Artista não encontrado"));
+
+        album.setTitle(dto.title());
+        album.setArtist(artist);
+
+        Album atualizado = albumRepository.save(album);
+
+        return toResponse(atualizado);
+    }
+
+    public void remover(Long id) {
+        Album album = albumRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Álbum não encontrado"));
+
+        albumRepository.delete(album);
+    }
+
     private AlbumResponseDTO toResponse(Album album) {
         return new AlbumResponseDTO(
                 album.getId(),
