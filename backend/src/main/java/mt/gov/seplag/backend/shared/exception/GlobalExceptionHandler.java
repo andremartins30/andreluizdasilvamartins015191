@@ -44,4 +44,14 @@ import java.util.List;
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(erro);
     }
+
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ApiSimpleErrorResponse> handleNotFound(NotFoundException ex) {
+
+        ApiSimpleErrorResponse response =
+                new ApiSimpleErrorResponse(404, ex.getMessage());
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
 }

@@ -6,6 +6,7 @@ import mt.gov.seplag.backend.web.artist.ArtistResponseDTO;
 import mt.gov.seplag.backend.domain.artist.Artist;
 import mt.gov.seplag.backend.domain.artist.ArtistRepository;
 import org.springframework.stereotype.Service;
+import mt.gov.seplag.backend.shared.exception.NotFoundException;
 
 import java.util.List;
 
@@ -34,4 +35,11 @@ public class ArtistService {
     return new ArtistResponseDTO(salvo.getId(), salvo.getName());
 
     }
+
+    public ArtistResponseDTO buscarPorId(Long id) {
+    Artist artist = repository.findById(id)
+            .orElseThrow(() -> new NotFoundException("Artista não encontrado"));
+
+    return new ArtistResponseDTO(artist.getId(), artist.getName());
+}
 }

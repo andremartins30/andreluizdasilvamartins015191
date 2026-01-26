@@ -38,4 +38,9 @@ public class ArtistController {
     public ResponseEntity<ArtistResponseDTO> criar(@Valid @RequestBody ArtistRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.salvar(dto));
     }
+
+    @GetMapping("/{id}")
+    public ArtistResponseDTO buscarPorId(@PathVariable Long id) {
+        return service.buscarPorId(id);
+    }
 }
