@@ -41,5 +41,24 @@ public class ArtistService {
             .orElseThrow(() -> new NotFoundException("Artista não encontrado"));
 
     return new ArtistResponseDTO(artist.getId(), artist.getName());
-}
+    }
+
+    public ArtistResponseDTO atualizar(Long id, ArtistRequestDTO dto) {
+    Artist artist = repository.findById(id)
+            .orElseThrow(() -> new NotFoundException("Artista não encontrado"));
+
+    artist.setName(dto.getName());
+
+    Artist atualizado = repository.save(artist);
+
+    return new ArtistResponseDTO(atualizado.getId(), atualizado.getName());
+
+    }
+
+    public void remover(Long id) {
+    Artist artist = repository.findById(id)
+            .orElseThrow(() -> new NotFoundException("Artista não encontrado"));
+
+    repository.delete(artist);
+    }
 }

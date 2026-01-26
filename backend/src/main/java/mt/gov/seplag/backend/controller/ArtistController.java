@@ -39,8 +39,25 @@ public class ArtistController {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.salvar(dto));
     }
 
+    @Operation(summary = "Busca um artista por ID")
     @GetMapping("/{id}")
     public ArtistResponseDTO buscarPorId(@PathVariable Long id) {
         return service.buscarPorId(id);
+    }
+
+    @Operation(summary = "Atualiza artista existente")
+    @PutMapping("/{id}")
+    public ResponseEntity<ArtistResponseDTO> atualizar(
+            @PathVariable Long id,
+            @Valid @RequestBody ArtistRequestDTO dto
+    ) {
+        return ResponseEntity.ok(service.atualizar(id, dto));
+    }
+
+    @Operation(summary = "Remove um artista por ID")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> remover(@PathVariable Long id) {
+        service.remover(id);
+        return ResponseEntity.noContent().build();
     }
 }
