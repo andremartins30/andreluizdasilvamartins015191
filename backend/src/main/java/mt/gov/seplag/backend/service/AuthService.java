@@ -16,29 +16,45 @@ import org.springframework.stereotype.Service;
 public class AuthService {
 
     private final UserRepository repository;
-    private final PasswordEncoder encoder;
+    private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
-    public AuthService(UserRepository repository, PasswordEncoder encoder, JwtService jwtService) {
+    public AuthService(UserRepository repository,
+                    PasswordEncoder passwordEncoder,
+                    JwtService jwtService) {
         this.repository = repository;
-        this.encoder = encoder;
+        this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
     }
 
-    public LoginResponseDTO login(LoginRequestDTO dto) {
-        User user = repository.findByUsername(dto.username())
-                .orElseThrow(() -> new RuntimeException("Usuário inválido"));
+    public AuthResponseDTO register(RegisterRequestDTO request) {
 
-        if (!encoder.matches(dto.password(), user.getPassword())) {
+        if (repository.existsByUsername(request.username())) {
+            throw new RuntimeException("Usuário já existe");
+        }
+
+        User user = new User();
+        user.setUsername(request.username());
+        user.setPassword(passwordEncoder.encode(request.password()));
+        user.setRole("USER");
+
+        repository.save(user);
+
+        String token = jwtService.generateToken(user.getUsername());
+
+        return new AuthResponseDTO(token);
+    }
+
+    public AuthResponseDTO login(LoginRequestDTO request) {
+        User user = repository.findByUsername(request.username())
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new RuntimeException("Senha inválida");
         }
 
         String token = jwtService.generateToken(user.getUsername());
-        return new LoginResponseDTO(token);
-    }
 
-    public AuthResponseDTO register(RegisterRequestDTO dto) {
-        // depois colocar persistencia
-        return new AuthResponseDTO("usuario-registrado-fake-token");
+        return new AuthResponseDTO(token);
     }
 }
