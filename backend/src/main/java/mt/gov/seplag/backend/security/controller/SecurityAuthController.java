@@ -6,11 +6,11 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
-public class AuthController {
+public class SecurityAuthController {
 
     private final JwtUtil jwtUtil;
 
-    public AuthController(JwtUtil jwtUtil) {
+    public SecurityAuthController(JwtUtil jwtUtil) {
         this.jwtUtil = jwtUtil;
     }
 
