@@ -1,24 +1,23 @@
 package mt.gov.seplag.backend.shared.exception;
 
-import java.util.List;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class ApiErrorResponse {
 
-    private LocalDateTime timestamp;
-    private int status;
-    private String error;
-    private List<String> messages;
-    private String path;
+    private final LocalDateTime timestamp;
+    private final int status;
+    private final String error;
+    private final List<String> messages;
+    private final String path;
 
     public ApiErrorResponse(int status, String error, List<String> messages, String path) {
         this.timestamp = LocalDateTime.now();
         this.status = status;
         this.error = error;
-        this.path = path;
         this.messages = messages;
+        this.path = path;
     }
-
 
     public LocalDateTime getTimestamp() {
         return timestamp;
@@ -32,12 +31,11 @@ public class ApiErrorResponse {
         return error;
     }
 
-    public String getPath() { 
-        return path; 
+    public List<String> getMessages() {
+        return messages;
     }
 
-    public List<String> getMessages() { 
-        return messages; 
+    public String getPath() {
+        return path;
     }
-
 }
