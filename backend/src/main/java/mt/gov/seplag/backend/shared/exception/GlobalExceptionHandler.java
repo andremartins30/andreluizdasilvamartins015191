@@ -1,57 +1,78 @@
 package mt.gov.seplag.backend.shared.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.ConstraintViolationException;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
 
 @RestControllerAdvice
-    public class GlobalExceptionHandler {
-
-        @ExceptionHandler(MethodArgumentNotValidException.class)
-        public ResponseEntity<ApiErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
-
-            List<FieldErrorResponse> errors = ex.getBindingResult()
-                    .getFieldErrors()
-                    .stream()
-                    .map(err -> new FieldErrorResponse(
-                        err.getField(),
-                        err.getDefaultMessage()
-                    ))
-                    .toList();
-
-            ApiErrorResponse response = new ApiErrorResponse(400, errors);
-
-            return ResponseEntity.badRequest().body(response);
-        }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiError> handleGeneric(Exception ex, HttpServletRequest request) {
-
-        ApiError erro = new ApiError(
-                500,
-                "Erro interno",
-                List.of("Erro inesperado no servidor"),
-                request.getRequestURI()
-        );
-
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(erro);
-    }
-
+public class GlobalExceptionHandler {
 
     @ExceptionHandler(NotFoundException.class)
-    public ResponseEntity<ApiSimpleErrorResponse> handleNotFound(NotFoundException ex) {
+    public ResponseEntity<ApiErrorResponse> handleNotFound(
+            NotFoundException ex,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiErrorResponse(
+                        404,
+                        "Recurso não encontrado",
+                        List.of(ex.getMessage()),
+                        request.getRequestURI()
+                ));
+    }
 
-        ApiSimpleErrorResponse response =
-                new ApiSimpleErrorResponse(404, ex.getMessage());
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ApiErrorResponse> handleBusiness(
+            BusinessException ex,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.badRequest()
+                .body(new ApiErrorResponse(
+                        400,
+                        "Erro de negócio",
+                        List.of(ex.getMessage()),
+                        request.getRequestURI()
+                ));
+    }
 
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiErrorResponse> handleValidation(
+            MethodArgumentNotValidException ex,
+            HttpServletRequest request
+    ) {
+
+        List<FieldErrorResponse> fieldErrors = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(err -> new FieldErrorResponse(
+                        err.getField(),
+                        err.getDefaultMessage()
+                ))
+                .toList();
+
+        return ResponseEntity.badRequest()
+                .body(new ApiErrorResponse(
+                        400,
+                        "Erro de validação",
+                        List.of("Campos inválidos na requisição"),
+                        request.getRequestURI()
+                ));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiErrorResponse> handleGeneric(
+            Exception ex,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiErrorResponse(
+                        500,
+                        "Erro interno",
+                        List.of("Erro inesperado no servidor"),
+                        request.getRequestURI()
+                ));
     }
 }

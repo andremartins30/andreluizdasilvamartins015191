@@ -6,6 +6,9 @@ import mt.gov.seplag.backend.security.JwtService;
 import mt.gov.seplag.backend.web.auth.LoginRequestDTO;
 import mt.gov.seplag.backend.web.auth.LoginResponseDTO;
 
+import mt.gov.seplag.backend.shared.exception.BusinessException;
+import mt.gov.seplag.backend.shared.exception.NotFoundException;
+
 import mt.gov.seplag.backend.web.auth.AuthResponseDTO;
 import mt.gov.seplag.backend.web.auth.RegisterRequestDTO;
 
@@ -30,7 +33,7 @@ public class AuthService {
     public AuthResponseDTO register(RegisterRequestDTO request) {
 
         if (repository.existsByUsername(request.username())) {
-            throw new RuntimeException("Usuário já existe");
+            throw new BusinessException("Usuário já existe");
         }
 
         User user = new User();
@@ -47,7 +50,7 @@ public class AuthService {
 
     public AuthResponseDTO login(LoginRequestDTO request) {
         User user = repository.findByUsername(request.username())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new NotFoundException("Usuário não encontrado"));
 
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
             throw new RuntimeException("Senha inválida");
