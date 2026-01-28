@@ -8,6 +8,9 @@ import mt.gov.seplag.backend.web.auth.AuthResponseDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
+import mt.gov.seplag.backend.shared.response.ApiSuccessResponse;
+
 import jakarta.validation.Valid;
 
 @RestController
@@ -21,16 +24,26 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponseDTO> register(
-            @Valid @RequestBody RegisterRequestDTO request
+    public ResponseEntity<ApiSuccessResponse<AuthResponseDTO>> register(
+            @Valid @RequestBody RegisterRequestDTO request,
+            HttpServletRequest http
     ) {
-        return ResponseEntity.ok(authService.register(request));
+        var result = authService.register(request);
+
+        return ResponseEntity.ok(
+            new ApiSuccessResponse<>(200, "Usuário registrado com sucesso", result, http.getRequestURI())
+        );
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponseDTO> login(
-            @Valid @RequestBody LoginRequestDTO request
+    public ResponseEntity<ApiSuccessResponse<AuthResponseDTO>> login(
+            @Valid @RequestBody LoginRequestDTO request,
+            HttpServletRequest http
     ) {
-        return ResponseEntity.ok(authService.login(request));
+        var result = authService.login(request);
+
+        return ResponseEntity.ok(
+            new ApiSuccessResponse<>(200, "Usuário logado com sucesso", result, http.getRequestURI())
+        );
     }
 }
