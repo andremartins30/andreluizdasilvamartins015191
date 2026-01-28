@@ -5,20 +5,24 @@ import mt.gov.seplag.backend.domain.album.Album;
 import mt.gov.seplag.backend.domain.album.AlbumRepository;
 import mt.gov.seplag.backend.domain.artist.Artist;
 import mt.gov.seplag.backend.domain.artist.ArtistRepository;
+import mt.gov.seplag.backend.service.storage.MinioService;
 import mt.gov.seplag.backend.web.album.AlbumRequestDTO;
 import mt.gov.seplag.backend.web.album.AlbumResponseDTO;
 import mt.gov.seplag.backend.shared.exception.NotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class AlbumService {
 
     private final AlbumRepository albumRepository;
     private final ArtistRepository artistRepository;
+    private final MinioService minioService;
 
-    public AlbumService(AlbumRepository albumRepository, ArtistRepository artistRepository) {
+    public AlbumService(MinioService minioService, AlbumRepository albumRepository, ArtistRepository artistRepository) {
+        this.minioService = minioService;
         this.albumRepository = albumRepository;
         this.artistRepository = artistRepository;
     }
@@ -87,6 +91,28 @@ public class AlbumService {
                 album.getArtist().getId(),
                 album.getArtist().getName()
         );
+    }
+
+
+    public void uploadCover(Long albumId, MultipartFile file) {
+        Album album = albumRepository.findById(albumId)
+        .orElseThrow(() -> new NotFoundException("Álbum não encontrado"));
+
+        String objectName = minioService.upload(file);
+
+        album.setCoverObjectName(objectName);
+        albumRepository.save(album);
+    }
+
+    public String getCoverUrl(Long id) {
+        Album album = albumRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("Álbum não encontrado"));
+
+        if (album.getCoverObjectName() == null) {
+            throw new NotFoundException("Álbum não possui capa cadastrada");
+        }
+
+        return minioService.generatePresignedUrl(album.getCoverObjectName());   
     }
 
 

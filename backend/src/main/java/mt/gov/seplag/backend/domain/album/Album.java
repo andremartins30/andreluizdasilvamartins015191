@@ -44,4 +44,16 @@ public class Album {
     public void setArtist(Artist artist) {
         this.artist = artist;
     }
+
+    @Column(name = "cover_object_name")
+    private String coverObjectName;
+
+    public String getCoverObjectName() {
+        return coverObjectName;
+    }
+
+    public void setCoverObjectName(String coverObjectName) {
+        this.coverObjectName = coverObjectName;
+    }
+    
 }

@@ -63,11 +63,12 @@ public class GlobalExceptionHandler {
                 Exception ex,
                 HttpServletRequest request
         ) {
+                ex.printStackTrace(); // Log para debug
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiErrorResponse(
                         500,
                         "Erro interno",
-                        List.of("Erro inesperado no servidor"),
+                        List.of(ex.getMessage() != null ? ex.getMessage() : "Erro inesperado no servidor"),
                         request.getRequestURI()
                 ));
         }

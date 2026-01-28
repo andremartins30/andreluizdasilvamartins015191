@@ -3,6 +3,9 @@ package mt.gov.seplag.backend.controller;
 import mt.gov.seplag.backend.web.album.AlbumResponseDTO;
 import mt.gov.seplag.backend.web.album.AlbumRequestDTO;
 
+import org.springframework.web.multipart.MultipartFile;
+import mt.gov.seplag.backend.service.storage.MinioService;
+
 import mt.gov.seplag.backend.domain.album.Album;
 import mt.gov.seplag.backend.service.AlbumService;
 import org.springframework.data.domain.Page;
@@ -61,4 +64,20 @@ public class AlbumController {
     public void remover(@PathVariable Long id) {
         service.remover(id);
     }
+
+    @PostMapping("/{id}/cover")
+    public ResponseEntity<?> uploadCover(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file
+    ) {
+        service.uploadCover(id, file);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{id}/cover-url")
+    public ResponseEntity<String> getCoverUrl(@PathVariable Long id) {
+
+        return ResponseEntity.ok(service.getCoverUrl(id));
+    }
+
 }
