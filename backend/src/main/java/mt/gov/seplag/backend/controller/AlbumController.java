@@ -16,7 +16,9 @@ import org.springframework.http.ResponseEntity;
 
 import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Album", description = "Gerenciamento de álbuns")
 @RestController
 @RequestMapping("/api/v1/albums")
 public class AlbumController {
