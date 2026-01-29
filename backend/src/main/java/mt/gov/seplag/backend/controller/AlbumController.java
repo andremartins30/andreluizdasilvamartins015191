@@ -6,7 +6,6 @@ import mt.gov.seplag.backend.web.album.AlbumRequestDTO;
 import org.springframework.web.multipart.MultipartFile;
 import mt.gov.seplag.backend.service.storage.MinioService;
 
-import mt.gov.seplag.backend.domain.album.Album;
 import mt.gov.seplag.backend.service.AlbumService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

@@ -2,7 +2,6 @@ package mt.gov.seplag.backend.controller;
 
 import mt.gov.seplag.backend.service.AuthService;
 import mt.gov.seplag.backend.web.auth.LoginRequestDTO;
-import mt.gov.seplag.backend.web.auth.LoginResponseDTO;
 import mt.gov.seplag.backend.web.auth.RegisterRequestDTO;
 import mt.gov.seplag.backend.web.auth.AuthResponseDTO;
 import org.springframework.http.ResponseEntity;

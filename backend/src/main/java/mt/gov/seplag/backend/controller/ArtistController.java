@@ -3,7 +3,6 @@ package mt.gov.seplag.backend.controller;
 import mt.gov.seplag.backend.web.artist.ArtistRequestDTO;
 import mt.gov.seplag.backend.web.artist.ArtistResponseDTO;
 
-import mt.gov.seplag.backend.domain.artist.Artist;
 import mt.gov.seplag.backend.service.ArtistService;
 
 import org.springframework.http.HttpStatus;

@@ -1,4 +1,4 @@
-package mt.gov.seplag.backend.security;
+package mt.gov.seplag.backend.security.service;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;

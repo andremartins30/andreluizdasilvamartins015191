@@ -2,9 +2,8 @@ package mt.gov.seplag.backend.service;
 
 import mt.gov.seplag.backend.domain.user.User;
 import mt.gov.seplag.backend.domain.user.UserRepository;
-import mt.gov.seplag.backend.security.JwtService;
+import mt.gov.seplag.backend.security.service.JwtService;
 import mt.gov.seplag.backend.web.auth.LoginRequestDTO;
-import mt.gov.seplag.backend.web.auth.LoginResponseDTO;
 
 import mt.gov.seplag.backend.shared.exception.BusinessException;
 import mt.gov.seplag.backend.shared.exception.NotFoundException;
