@@ -5,23 +5,23 @@ services:
     image: postgres:16
     container_name: postgres
     environment:
-      POSTGRES_DB: seplagdb
-      POSTGRES_USER: seplag
-      POSTGRES_PASSWORD: seplag
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5433:5432"
+      - "${POSTGRES_PORT}:5432"
 
   minio:
     image: minio/minio:latest
     container_name: minio
     command: server /data --console-address ":9001"
     environment:
-      MINIO_SERVER_URL: http://64.23.178.251:9000
-      MINIO_ROOT_USER: admin
-      MINIO_ROOT_PASSWORD: admin123
+      MINIO_SERVER_URL: ${MINIO_SERVER_URL}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "${MINIO_PORT}:9000"
+      - "${MINIO_CONSOLE_PORT}:9001"
     volumes:
       - minio_data:/data
 
