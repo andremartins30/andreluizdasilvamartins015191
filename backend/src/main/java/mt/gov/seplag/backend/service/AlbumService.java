@@ -11,6 +11,7 @@ import mt.gov.seplag.backend.web.album.AlbumResponseDTO;
 import mt.gov.seplag.backend.web.album.AlbumCoverResDTO;
 import mt.gov.seplag.backend.shared.exception.NotFoundException;
 import mt.gov.seplag.backend.shared.exception.BusinessException;
+import mt.gov.seplag.backend.shared.exception.FileValidationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -101,20 +102,34 @@ public class AlbumService {
         Album album = albumRepository.findById(albumId)
                 .orElseThrow(() -> new NotFoundException("Álbum não encontrado"));
 
+        // Validação de arquivo vazio
         if (file.isEmpty()) {
-            throw new BusinessException("Arquivo não pode estar vazio");
+            throw new FileValidationException("Arquivo não pode estar vazio");
         }
 
-        if (!List.of("image/jpeg", "image/png").contains(file.getContentType())) {
-            throw new BusinessException("Formato de imagem inválido");
+        // Validação de tipo de arquivo
+        if (!List.of("image/jpeg", "image/png", "image/jpg").contains(file.getContentType())) {
+            throw new FileValidationException("Formato de imagem inválido. Apenas JPEG e PNG são permitidos");
         }
 
+        // Validação de tamanho (5MB)
         long maxSize = 5 * 1024 * 1024; // 5MB
         if (file.getSize() > maxSize) {
-            throw new BusinessException("Imagem excede o tamanho máximo permitido");
+            throw new FileValidationException("Imagem excede o tamanho máximo permitido de 5MB");
         }
 
-        String objectName = minioService.upload(file);
+        // Remove a capa antiga se existir
+        if (album.getCoverObjectName() != null) {
+            try {
+                minioService.removeObject(album.getCoverObjectName());
+            } catch (Exception e) {
+                // Log do erro, mas não interrompe o fluxo
+                System.err.println("Erro ao remover capa antiga: " + e.getMessage());
+            }
+        }
+
+        // Upload da nova capa com estrutura de pastas
+        String objectName = minioService.upload(file, albumId);
 
         album.setCoverObjectName(objectName);
         albumRepository.save(album);

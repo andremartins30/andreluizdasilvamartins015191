@@ -38,6 +38,20 @@ public class GlobalExceptionHandler {
                 ));
         }
 
+        @ExceptionHandler(FileValidationException.class)
+        public ResponseEntity<ApiErrorResponse> handleFileValidation(
+                FileValidationException ex,
+                HttpServletRequest request
+        ) {
+                return ResponseEntity.badRequest()
+                .body(new ApiErrorResponse(
+                        400,
+                        "Erro de validação de arquivo",
+                        List.of(ex.getMessage()),
+                        request.getRequestURI()
+                ));
+        }
+
         @ExceptionHandler(MethodArgumentNotValidException.class)
         public ResponseEntity<ApiErrorResponse> handleValidation(
                 MethodArgumentNotValidException ex,

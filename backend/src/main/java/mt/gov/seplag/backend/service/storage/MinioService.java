@@ -27,9 +27,25 @@ public class MinioService {
             .build();
     }
 
-    public String upload(MultipartFile file) {
+
+    private String sanitizeFilename(String filename) {
+        if (filename == null || filename.isBlank()) {
+            return "file";
+        }
+        return filename
+                .toLowerCase()
+                .replaceAll("\\s+", "_")
+                .replaceAll("[^a-z0-9._-]", "");
+    }
+
+
+    public String upload(MultipartFile file, Long albumId) {
         try {
-            String objectName = UUID.randomUUID() + "-" + file.getOriginalFilename();
+            String safeName = sanitizeFilename(file.getOriginalFilename());
+            String objectName = String.format("albums/%d/%s-%s", 
+                    albumId, 
+                    UUID.randomUUID(), 
+                    safeName);
 
             boolean exists = minioClient.bucketExists(
                     BucketExistsArgs.builder().bucket(bucket).build()
@@ -56,6 +72,22 @@ public class MinioService {
             throw new RuntimeException("Erro ao enviar arquivo para o MinIO", e);
         }
     }
+
+
+    public void removeObject(String objectName) {
+        try {
+            minioClient.removeObject(
+                    RemoveObjectArgs.builder()
+                            .bucket(bucket)
+                            .object(objectName)
+                            .build()
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("Erro ao remover arquivo do MinIO", e);
+        }
+    }
+
+
 
     public String generatePresignedUrl(String objectName) {
         try {

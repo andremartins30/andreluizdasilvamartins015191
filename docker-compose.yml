@@ -14,9 +14,10 @@ services:
   minio:
     image: minio/minio:latest
     container_name: minio
-    command: server /data --console-address ":9001"
+    command: server /data --console-address ":9001" --address ":9000"
     environment:
       MINIO_SERVER_URL: ${MINIO_SERVER_URL}
+      MINIO_DOMAIN: 64.23.178.251
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
