@@ -22,9 +22,9 @@ public class MinioService {
             @Value("${minio.secret-key}") String secretKey
     ) {
         this.minioClient = MinioClient.builder()
-                .endpoint(url)
-                .credentials(accessKey, secretKey)
-                .build();
+            .endpoint(url)
+            .credentials(accessKey, secretKey)
+            .build();
     }
 
     public String upload(MultipartFile file) {

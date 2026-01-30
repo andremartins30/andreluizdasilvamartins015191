@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/seplagdb
+    url: jdbc:postgresql://localhost:5433/seplagdb
     username: seplag
     password: seplag
     driver-class-name: org.postgresql.Driver
@@ -22,10 +22,11 @@ spring:
     name: seplag-backend
 
 minio:
-  url: http://localhost:9000
+  url: http://64.23.178.251:9000
   access-key: admin
   secret-key: admin123
   bucket: album-covers
 
 server:
   port: 8080
+  address: 0.0.0.0

@@ -8,11 +8,15 @@ import mt.gov.seplag.backend.domain.artist.ArtistRepository;
 import mt.gov.seplag.backend.service.storage.MinioService;
 import mt.gov.seplag.backend.web.album.AlbumRequestDTO;
 import mt.gov.seplag.backend.web.album.AlbumResponseDTO;
+import mt.gov.seplag.backend.web.album.AlbumCoverResDTO;
 import mt.gov.seplag.backend.shared.exception.NotFoundException;
+import mt.gov.seplag.backend.shared.exception.BusinessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @Service
 public class AlbumService {
@@ -93,15 +97,35 @@ public class AlbumService {
         );
     }
 
-
-    public void uploadCover(Long albumId, MultipartFile file) {
+    public AlbumCoverResDTO uploadCover(Long albumId, MultipartFile file) {
         Album album = albumRepository.findById(albumId)
-        .orElseThrow(() -> new NotFoundException("Álbum não encontrado"));
+                .orElseThrow(() -> new NotFoundException("Álbum não encontrado"));
+
+        if (file.isEmpty()) {
+            throw new BusinessException("Arquivo não pode estar vazio");
+        }
+
+        if (!List.of("image/jpeg", "image/png").contains(file.getContentType())) {
+            throw new BusinessException("Formato de imagem inválido");
+        }
+
+        long maxSize = 5 * 1024 * 1024; // 5MB
+        if (file.getSize() > maxSize) {
+            throw new BusinessException("Imagem excede o tamanho máximo permitido");
+        }
 
         String objectName = minioService.upload(file);
 
         album.setCoverObjectName(objectName);
         albumRepository.save(album);
+
+        String url = minioService.generatePresignedUrl(objectName);
+
+        return new AlbumCoverResDTO(
+                album.getId(),
+                objectName,
+                url
+        );
     }
 
     public String getCoverUrl(Long id) {

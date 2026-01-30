@@ -5,17 +5,18 @@ services:
     image: postgres:16
     container_name: postgres
     environment:
-      POSTGRES_DB: musicdb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: seplagdb
+      POSTGRES_USER: seplag
+      POSTGRES_PASSWORD: seplag
     ports:
-      - "5432:5432"
+      - "5433:5432"
 
   minio:
     image: minio/minio:latest
     container_name: minio
     command: server /data --console-address ":9001"
     environment:
+      MINIO_SERVER_URL: http://64.23.178.251:9000
       MINIO_ROOT_USER: admin
       MINIO_ROOT_PASSWORD: admin123
     ports:

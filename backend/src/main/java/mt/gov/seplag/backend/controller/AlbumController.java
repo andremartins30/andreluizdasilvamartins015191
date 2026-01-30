@@ -2,6 +2,7 @@ package mt.gov.seplag.backend.controller;
 
 import mt.gov.seplag.backend.web.album.AlbumResponseDTO;
 import mt.gov.seplag.backend.web.album.AlbumRequestDTO;
+import mt.gov.seplag.backend.web.album.AlbumCoverResDTO;
 
 import org.springframework.web.multipart.MultipartFile;
 import mt.gov.seplag.backend.service.storage.MinioService;
@@ -17,6 +18,10 @@ import org.springframework.http.ResponseEntity;
 import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import mt.gov.seplag.backend.shared.response.ApiSuccessResponse;
+import jakarta.servlet.http.HttpServletRequest;
 
 @Tag(name = "Album", description = "Gerenciamento de álbuns")
 @RestController
@@ -66,13 +71,27 @@ public class AlbumController {
         service.remover(id);
     }
 
+    @Operation(summary = "Upload da capa do álbum")
+    @ApiResponses({
+    @ApiResponse(responseCode = "201", description = "Capa enviada"),
+    @ApiResponse(responseCode = "400", description = "Arquivo inválido"),
+    @ApiResponse(responseCode = "404", description = "Álbum não encontrado")
+    })
     @PostMapping("/{id}/cover")
-    public ResponseEntity<?> uploadCover(
+    public ResponseEntity<ApiSuccessResponse<AlbumCoverResDTO>> uploadCover(
             @PathVariable Long id,
-            @RequestParam("file") MultipartFile file
+            @RequestParam("file") MultipartFile file,
+            HttpServletRequest http
     ) {
-        service.uploadCover(id, file);
-        return ResponseEntity.ok().build();
+        AlbumCoverResDTO response = service.uploadCover(id, file);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiSuccessResponse<>(
+                        201,
+                        "Capa do álbum enviada com sucesso",
+                        response,
+                        http.getRequestURI()
+                ));
     }
 
     @GetMapping("/{id}/cover-url")
