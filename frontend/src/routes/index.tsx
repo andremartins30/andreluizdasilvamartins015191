@@ -6,6 +6,9 @@ import { useAuth } from '../auth/AuthContext';
 
 const Login = lazy(() => import('../pages/Login/Login'));
 const Artists = lazy(() => import('../pages/Artists/Artists'));
+const ArtistDetail = lazy(() => import('../pages/ArtistDetail/ArtistDetail'));
+const ArtistForm = lazy(() => import('../pages/ArtistForm/ArtistForm'));
+const AlbumForm = lazy(() => import('../pages/AlbumForm/AlbumForm'));
 
 export function AppRoutes() {
     const { token } = useAuth();
@@ -24,6 +27,56 @@ export function AppRoutes() {
                         <ProtectedRoute>
                             <Navbar />
                             <Artists />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/artists/new"
+                    element={
+                        <ProtectedRoute>
+                            <Navbar />
+                            <ArtistForm />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/artists/:id/edit"
+                    element={
+                        <ProtectedRoute>
+                            <Navbar />
+                            <ArtistForm />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/artists/:id"
+                    element={
+                        <ProtectedRoute>
+                            <Navbar />
+                            <ArtistDetail />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/albums/new"
+                    element={
+                        <ProtectedRoute>
+                            <Navbar />
+                            <AlbumForm />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/albums/:id/edit"
+                    element={
+                        <ProtectedRoute>
+                            <Navbar />
+                            <AlbumForm />
                         </ProtectedRoute>
                     }
                 />

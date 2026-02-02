@@ -14,7 +14,7 @@ export function Navbar() {
         <nav className="bg-white shadow-md">
             <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
                 <h1 className="text-xl font-bold text-gray-800">
-                    Sistema de Artistas
+                    
                 </h1>
 
                 <button
