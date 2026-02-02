@@ -22,7 +22,7 @@ spring:
     name: seplag-backend
 
 minio:
-  url: ${MINIO_SERVER_URL:http://localhost:9000}
+  url: ${MINIO_SERVER_URL:http://64.23.178.251:9000}
   access-key: ${MINIO_ROOT_USER:admin}
   secret-key: ${MINIO_ROOT_PASSWORD:admin123}
   bucket: album-covers

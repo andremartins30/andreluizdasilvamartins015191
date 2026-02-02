@@ -22,8 +22,8 @@ public class MinioService {
             @Value("${minio.secret-key}") String secretKey
     ) {
         this.minioClient = MinioClient.builder()
-            .endpoint(url)
-            .credentials(accessKey, secretKey)
+            .endpoint(url.trim())
+            .credentials(accessKey.trim(), secretKey.trim())
             .build();
     }
 
@@ -91,7 +91,7 @@ public class MinioService {
 
     public String generatePresignedUrl(String objectName) {
         try {
-            return minioClient.getPresignedObjectUrl(
+            String url = minioClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
                             .bucket(bucket)
                             .object(objectName)
@@ -99,6 +99,7 @@ public class MinioService {
                             .expiry(30 * 60) // 30 minutos
                             .build()
             );
+            return url.trim().replaceAll("\\s+", "");
         } catch (Exception e) {
             throw new RuntimeException("Erro ao gerar URL assinada", e);
         }

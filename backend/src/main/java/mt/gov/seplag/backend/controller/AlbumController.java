@@ -3,6 +3,7 @@ package mt.gov.seplag.backend.controller;
 import mt.gov.seplag.backend.web.album.AlbumResponseDTO;
 import mt.gov.seplag.backend.web.album.AlbumRequestDTO;
 import mt.gov.seplag.backend.web.album.AlbumCoverResDTO;
+import mt.gov.seplag.backend.web.album.AlbumCoverUrlDTO;
 
 import org.springframework.web.multipart.MultipartFile;
 import mt.gov.seplag.backend.service.storage.MinioService;
@@ -95,9 +96,9 @@ public class AlbumController {
     }
 
     @GetMapping("/{id}/cover-url")
-    public ResponseEntity<String> getCoverUrl(@PathVariable Long id) {
-
-        return ResponseEntity.ok(service.getCoverUrl(id));
+    public ResponseEntity<AlbumCoverUrlDTO> getCoverUrl(@PathVariable Long id) {
+        String url = service.getCoverUrl(id);
+        return ResponseEntity.ok(new AlbumCoverUrlDTO(url));
     }
 
 }
