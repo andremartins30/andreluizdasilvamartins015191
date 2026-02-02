@@ -5,6 +5,9 @@ import mt.gov.seplag.backend.web.artist.ArtistResponseDTO;
 
 import mt.gov.seplag.backend.domain.artist.Artist;
 import mt.gov.seplag.backend.domain.artist.ArtistRepository;
+import mt.gov.seplag.backend.domain.album.AlbumRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import mt.gov.seplag.backend.shared.exception.NotFoundException;
 
@@ -14,51 +17,61 @@ import java.util.List;
 public class ArtistService {
 
     private final ArtistRepository repository;
+    private final AlbumRepository albumRepository;
 
-    public ArtistService(ArtistRepository repository) {
+    public ArtistService(ArtistRepository repository, AlbumRepository albumRepository) {
         this.repository = repository;
+        this.albumRepository = albumRepository;
     }
 
-    public List<ArtistResponseDTO> listarTodos() {
-    return repository.findAll()
-        .stream()
-        .map(a -> new ArtistResponseDTO(a.getId(), a.getName()))
-        .toList();
+    public Page<ArtistResponseDTO> listarTodos(String name, Pageable pageable) {
+        Page<Artist> artists;
+        
+        if (name != null && !name.isEmpty()) {
+            artists = repository.findByNameContainingIgnoreCase(name, pageable);
+        } else {
+            artists = repository.findAll(pageable);
+        }
+        
+        return artists.map(this::toDTO);
     }
 
     public ArtistResponseDTO salvar(ArtistRequestDTO dto) {
-    Artist artist = new Artist();
-    artist.setName(dto.getName());
+        Artist artist = new Artist();
+        artist.setName(dto.getName());
 
-    Artist salvo = repository.save(artist);
+        Artist salvo = repository.save(artist);
 
-    return new ArtistResponseDTO(salvo.getId(), salvo.getName());
-
+        return toDTO(salvo);
     }
 
     public ArtistResponseDTO buscarPorId(Long id) {
-    Artist artist = repository.findById(id)
-            .orElseThrow(() -> new NotFoundException("Artista não encontrado"));
+        Artist artist = repository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Artista não encontrado"));
 
-    return new ArtistResponseDTO(artist.getId(), artist.getName());
+        return toDTO(artist);
     }
 
     public ArtistResponseDTO atualizar(Long id, ArtistRequestDTO dto) {
-    Artist artist = repository.findById(id)
-            .orElseThrow(() -> new NotFoundException("Artista não encontrado"));
+        Artist artist = repository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Artista não encontrado"));
 
-    artist.setName(dto.getName());
+        artist.setName(dto.getName());
 
-    Artist atualizado = repository.save(artist);
+        Artist atualizado = repository.save(artist);
 
-    return new ArtistResponseDTO(atualizado.getId(), atualizado.getName());
-
+        return toDTO(atualizado);
     }
 
     public void remover(Long id) {
-    Artist artist = repository.findById(id)
-            .orElseThrow(() -> new NotFoundException("Artista não encontrado"));
+        Artist artist = repository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Artista não encontrado"));
 
-    repository.delete(artist);
+        repository.delete(artist);
+    }
+    
+    private ArtistResponseDTO toDTO(Artist artist) {
+        long albumsCount = albumRepository.countByArtist(artist);
+        return new ArtistResponseDTO(artist.getId(), artist.getName(), albumsCount);
     }
 }
