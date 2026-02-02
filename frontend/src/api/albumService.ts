@@ -3,10 +3,8 @@ import { api } from './axios';
 export interface Album {
     id: number;
     title: string;
-    artist: {
-        id: number;
-        name: string;
-    };
+    artistId: number;
+    artistName: string;
 }
 
 export interface AlbumPage {

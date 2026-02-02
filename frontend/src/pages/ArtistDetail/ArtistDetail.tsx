@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getArtistById, type Artist } from '../../api/artistService';
-import { getAlbums, type Album } from '../../api/albumService';
+import { getAlbums, getAlbumCoverUrl, type Album } from '../../api/albumService';
 import toast from 'react-hot-toast';
 
 export default function ArtistDetail() {
@@ -11,6 +11,7 @@ export default function ArtistDetail() {
     const [artist, setArtist] = useState<Artist | null>(null);
     const [albums, setAlbums] = useState<Album[]>([]);
     const [loading, setLoading] = useState(true);
+    const [coverUrls, setCoverUrls] = useState<Record<number, string>>({});
 
     useEffect(() => {
         if (!id) return;
@@ -31,9 +32,12 @@ export default function ArtistDetail() {
 
             // Filtrar álbuns do artista específico
             const artistAlbums = albumsRes.data.content.filter(
-                album => album.artist.id === Number(id)
+                album => album.artistId === Number(id)
             );
             setAlbums(artistAlbums);
+
+            // Buscar URLs das capas
+            loadCoverUrls(artistAlbums);
 
         } catch (err) {
             console.error('Erro ao carregar dados:', err);
@@ -41,6 +45,22 @@ export default function ArtistDetail() {
         } finally {
             setLoading(false);
         }
+    }
+
+    async function loadCoverUrls(albums: Album[]) {
+        const urls: Record<number, string> = {};
+
+        for (const album of albums) {
+            try {
+                const response = await getAlbumCoverUrl(album.id);
+                urls[album.id] = response.data.url;
+            } catch (err) {
+                // Álbum sem capa, ignorar erro
+                console.log(`Álbum ${album.id} sem capa`);
+            }
+        }
+
+        setCoverUrls(urls);
     }
 
     if (loading) {
@@ -106,8 +126,16 @@ export default function ArtistDetail() {
                             key={album.id}
                             className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-4"
                         >
-                            <div className="aspect-square bg-gray-200 rounded mb-3 flex items-center justify-center">
-                                <span className="text-gray-400 text-4xl">♪</span>
+                            <div className="aspect-square bg-gray-200 rounded mb-3 flex items-center justify-center overflow-hidden">
+                                {coverUrls[album.id] ? (
+                                    <img
+                                        src={coverUrls[album.id]}
+                                        alt={`Capa de ${album.title}`}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <span className="text-gray-400 text-4xl">♪</span>
+                                )}
                             </div>
                             <h3 className="font-semibold text-lg">{album.title}</h3>
                         </div>

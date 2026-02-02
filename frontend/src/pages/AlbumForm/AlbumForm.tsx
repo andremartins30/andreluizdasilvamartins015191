@@ -46,7 +46,7 @@ export default function AlbumForm() {
         try {
             const response = await getAlbumById(Number(id));
             setTitle(response.data.title);
-            setArtistId(response.data.artist.id);
+            setArtistId(response.data.artistId);
         } catch (err) {
             toast.error('Erro ao carregar álbum');
             navigate('/artists');
