@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { createAlbum, updateAlbum, getAlbumById, uploadAlbumCover } from '../../api/albumService';
+import { createAlbum, updateAlbum, getAlbumById, uploadAlbumCover, getAlbumCoverUrl } from '../../api/albumService';
 import { getArtists, type Artist } from '../../api/artistService';
 import toast from 'react-hot-toast';
+import { ChevronLeft } from 'lucide-react';
 
 export default function AlbumForm() {
     const { id } = useParams<{ id: string }>();
@@ -15,6 +16,7 @@ export default function AlbumForm() {
     const [artists, setArtists] = useState<Artist[]>([]);
     const [coverFile, setCoverFile] = useState<File | null>(null);
     const [coverPreview, setCoverPreview] = useState<string>('');
+    const [currentCoverUrl, setCurrentCoverUrl] = useState<string>('');
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -47,6 +49,15 @@ export default function AlbumForm() {
             const response = await getAlbumById(Number(id));
             setTitle(response.data.title);
             setArtistId(response.data.artistId);
+
+            // Carregar capa existente
+            try {
+                const coverResponse = await getAlbumCoverUrl(Number(id));
+                setCurrentCoverUrl(coverResponse.data.url);
+            } catch (err) {
+                // Álbum sem capa
+                console.log('Álbum sem capa');
+            }
         } catch (err) {
             toast.error('Erro ao carregar álbum');
             navigate('/artists');
@@ -129,13 +140,14 @@ export default function AlbumForm() {
         <div className="p-6 max-w-2xl mx-auto">
             <button
                 onClick={() => navigate('/artists')}
-                className="mb-4 text-blue-600 hover:text-blue-700"
+                className="mb-4 text-gray-600 hover:text-gray-800 flex items-center gap-2 transition-colors"
             >
-                ← Voltar
+                <ChevronLeft size={20} />
+                Voltar
             </button>
 
-            <div className="bg-white rounded-lg shadow p-6">
-                <h1 className="text-2xl font-bold mb-6">
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h1 className="text-2xl font-bold text-gray-800 mb-6">
                     {isEditing ? 'Editar Álbum' : 'Novo Álbum'}
                 </h1>
 
@@ -149,7 +161,7 @@ export default function AlbumForm() {
                             type="text"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
                             placeholder="Digite o título do álbum"
                             required
                         />
@@ -163,7 +175,7 @@ export default function AlbumForm() {
                             id="artist"
                             value={artistId}
                             onChange={(e) => setArtistId(Number(e.target.value))}
-                            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
                             required
                         >
                             <option value="">Selecione um artista</option>
@@ -177,14 +189,26 @@ export default function AlbumForm() {
 
                     <div>
                         <label htmlFor="cover" className="block text-sm font-medium text-gray-700 mb-1">
-                            Capa do Álbum
+                            {isEditing && currentCoverUrl ? 'Alterar Capa do Álbum' : 'Capa do Álbum'}
                         </label>
+
+                        {isEditing && currentCoverUrl && !coverPreview && (
+                            <div className="mb-3">
+                                <p className="text-sm text-gray-600 mb-2">Capa atual:</p>
+                                <img
+                                    src={currentCoverUrl}
+                                    alt="Capa atual"
+                                    className="w-48 h-48 object-cover rounded-lg shadow"
+                                />
+                            </div>
+                        )}
+
                         <input
                             id="cover"
                             type="file"
                             accept="image/*"
                             onChange={handleFileChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
                         />
                         <p className="text-xs text-gray-500 mt-1">
                             Formatos aceitos: JPG, PNG. Tamanho máximo: 5MB
@@ -193,11 +217,11 @@ export default function AlbumForm() {
 
                     {coverPreview && (
                         <div className="mt-4">
-                            <p className="text-sm font-medium text-gray-700 mb-2">Preview:</p>
+                            <p className="text-sm font-medium text-gray-700 mb-2">Nova capa:</p>
                             <img
                                 src={coverPreview}
                                 alt="Preview da capa"
-                                className="w-48 h-48 object-cover rounded shadow"
+                                className="w-48 h-48 object-cover rounded-lg shadow"
                             />
                         </div>
                     )}
@@ -206,7 +230,7 @@ export default function AlbumForm() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="flex-1 bg-blue-600 text-white font-medium py-2 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 bg-gray-800 text-white font-medium py-2 rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             {loading ? 'Salvando...' : 'Salvar'}
                         </button>
@@ -214,7 +238,7 @@ export default function AlbumForm() {
                         <button
                             type="button"
                             onClick={() => navigate('/artists')}
-                            className="flex-1 bg-gray-300 text-gray-700 font-medium py-2 rounded hover:bg-gray-400"
+                            className="flex-1 bg-gray-100 text-gray-700 font-medium py-2 rounded-lg hover:bg-gray-200 transition-colors"
                         >
                             Cancelar
                         </button>

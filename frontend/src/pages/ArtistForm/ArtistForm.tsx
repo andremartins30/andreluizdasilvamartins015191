@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { createArtist, updateArtist, getArtistById } from '../../api/artistService';
 import toast from 'react-hot-toast';
+import { ChevronLeft } from 'lucide-react';
 
 export default function ArtistForm() {
     const { id } = useParams<{ id: string }>();
@@ -59,13 +60,14 @@ export default function ArtistForm() {
         <div className="p-6 max-w-2xl mx-auto">
             <button
                 onClick={() => navigate('/artists')}
-                className="mb-4 text-blue-600 hover:text-blue-700"
+                className="mb-4 text-gray-600 hover:text-gray-800 flex items-center gap-2 transition-colors"
             >
-                ← Voltar
+                <ChevronLeft size={20} />
+                Voltar
             </button>
 
-            <div className="bg-white rounded-lg shadow p-6">
-                <h1 className="text-2xl font-bold mb-6">
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <h1 className="text-2xl font-bold text-gray-800 mb-6">
                     {isEditing ? 'Editar Artista' : 'Novo Artista'}
                 </h1>
 
@@ -79,7 +81,7 @@ export default function ArtistForm() {
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
                             placeholder="Digite o nome do artista"
                             required
                         />
@@ -89,7 +91,7 @@ export default function ArtistForm() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="flex-1 bg-blue-600 text-white font-medium py-2 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 bg-gray-800 text-white font-medium py-2 rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             {loading ? 'Salvando...' : 'Salvar'}
                         </button>
@@ -97,7 +99,7 @@ export default function ArtistForm() {
                         <button
                             type="button"
                             onClick={() => navigate('/artists')}
-                            className="flex-1 bg-gray-300 text-gray-700 font-medium py-2 rounded hover:bg-gray-400"
+                            className="flex-1 bg-gray-100 text-gray-700 font-medium py-2 rounded-lg hover:bg-gray-200 transition-colors"
                         >
                             Cancelar
                         </button>
