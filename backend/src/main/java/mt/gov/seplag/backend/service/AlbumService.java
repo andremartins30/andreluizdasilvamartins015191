@@ -25,11 +25,16 @@ public class AlbumService {
     private final AlbumRepository albumRepository;
     private final ArtistRepository artistRepository;
     private final MinioService minioService;
+    private final AlbumNotificationService notificationService;
 
-    public AlbumService(MinioService minioService, AlbumRepository albumRepository, ArtistRepository artistRepository) {
+    public AlbumService(MinioService minioService, 
+                       AlbumRepository albumRepository, 
+                       ArtistRepository artistRepository,
+                       AlbumNotificationService notificationService) {
         this.minioService = minioService;
         this.albumRepository = albumRepository;
         this.artistRepository = artistRepository;
+        this.notificationService = notificationService;
     }
 
     public Page<AlbumResponseDTO> listar(String artist, Pageable pageable) {
@@ -63,6 +68,9 @@ public class AlbumService {
         Album album = new Album(dto.title(), artist);
 
         Album salvo = albumRepository.save(album);
+
+        // Enviar notificação via WebSocket
+        notificationService.notifyNewAlbum(salvo.getId(), salvo.getTitle(), artist.getName());
 
         return toResponse(salvo);
     }
