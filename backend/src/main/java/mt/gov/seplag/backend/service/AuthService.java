@@ -42,9 +42,10 @@ public class AuthService {
 
         repository.save(user);
 
-        String token = jwtService.generateToken(user.getUsername());
+        String accessToken = jwtService.generateToken(user.getUsername());
+        String refreshToken = jwtService.generateRefreshToken(user.getUsername());
 
-        return new AuthResponseDTO(token);
+        return new AuthResponseDTO(accessToken, refreshToken);
     }
 
     public AuthResponseDTO login(LoginRequestDTO request) {
@@ -55,8 +56,24 @@ public class AuthService {
             throw new RuntimeException("Senha inválida");
         }
 
-        String token = jwtService.generateToken(user.getUsername());
+        String accessToken = jwtService.generateToken(user.getUsername());
+        String refreshToken = jwtService.generateRefreshToken(user.getUsername());
 
-        return new AuthResponseDTO(token);
+        return new AuthResponseDTO(accessToken, refreshToken);
+    }
+
+    public AuthResponseDTO refreshToken(String refreshToken) {
+        if (!jwtService.isTokenValid(refreshToken)) {
+            throw new BusinessException("Refresh token inválido ou expirado");
+        }
+
+        String username = jwtService.extractUsername(refreshToken);
+        User user = repository.findByUsername(username)
+                .orElseThrow(() -> new NotFoundException("Usuário não encontrado"));
+
+        String newAccessToken = jwtService.generateToken(user.getUsername());
+        String newRefreshToken = jwtService.generateRefreshToken(user.getUsername());
+
+        return new AuthResponseDTO(newAccessToken, newRefreshToken);
     }
 }

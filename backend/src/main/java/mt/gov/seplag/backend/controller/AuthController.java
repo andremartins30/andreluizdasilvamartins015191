@@ -47,4 +47,21 @@ public class AuthController {
         return ResponseEntity.ok(
                 new ApiSuccessResponse<>(200, "Usuário logado com sucesso", result, http.getRequestURI()));
     }
+
+    @Operation(summary = "Renova o token de acesso usando o refresh token")
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiSuccessResponse<AuthResponseDTO>> refresh(
+            @RequestHeader("Authorization") String authHeader,
+            HttpServletRequest http) {
+        
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new RuntimeException("Token inválido");
+        }
+        
+        String refreshToken = authHeader.substring(7);
+        var result = authService.refreshToken(refreshToken);
+
+        return ResponseEntity.ok(
+                new ApiSuccessResponse<>(200, "Token renovado com sucesso", result, http.getRequestURI()));
+    }
 }
