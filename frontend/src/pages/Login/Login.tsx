@@ -31,7 +31,7 @@ export default function AuthForm() {
         try {
             if (mode === 'login') {
                 const response = await login({ username, password });
-                signIn(response.token);
+                signIn(response.token, response.refreshToken);
                 toast.success('Login realizado com sucesso!');
                 navigate('/artists');
             } else {
