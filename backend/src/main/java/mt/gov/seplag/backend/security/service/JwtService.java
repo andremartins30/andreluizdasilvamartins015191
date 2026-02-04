@@ -14,7 +14,7 @@ import java.util.function.Function;
 public class JwtService {
 
     private static final String SECRET = "7K9mP2nQ5rS8tU1vW4xY6zA3bC5dE7fG9hJ2kL4mN6pQ8rS1tU3vW5xY7zA9bC2d";
-    private static final long ACCESS_TOKEN_EXPIRATION = 1000 * 60 * 60; // 1 hora
+    private static final long ACCESS_TOKEN_EXPIRATION = 1000 * 60 * 5; // 5 minutos
     private static final long REFRESH_TOKEN_EXPIRATION = 1000 * 60 * 60 * 24 * 7; // 7 dias
 
     private final Key key = Keys.hmacShaKeyFor(SECRET.getBytes());
