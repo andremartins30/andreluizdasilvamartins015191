@@ -5,6 +5,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import mt.gov.seplag.backend.domain.artist.Artist;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "albums")
 public class Album {
@@ -17,6 +20,12 @@ public class Album {
 
     @ManyToOne
     private Artist artist;
+
+    @OneToMany(mappedBy = "album", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<AlbumCover> covers = new ArrayList<>();
+
+    @Column(name = "cover_object_name")
+    private String coverObjectName;
 
     public Album() {}
 
@@ -45,8 +54,19 @@ public class Album {
         this.artist = artist;
     }
 
-    @Column(name = "cover_object_name")
-    private String coverObjectName;
+    public List<AlbumCover> getCovers() {
+        return covers;
+    }
+
+    public void addCover(AlbumCover cover) {
+        covers.add(cover);
+        cover.setAlbum(this);
+    }
+
+    public void removeCover(AlbumCover cover) {
+        covers.remove(cover);
+        cover.setAlbum(null);
+    }
 
     public String getCoverObjectName() {
         return coverObjectName;

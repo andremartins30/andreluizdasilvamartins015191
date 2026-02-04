@@ -8,6 +8,8 @@ import mt.gov.seplag.backend.web.album.AlbumCoverUrlDTO;
 import org.springframework.web.multipart.MultipartFile;
 import mt.gov.seplag.backend.service.storage.MinioService;
 
+import java.util.List;
+
 import mt.gov.seplag.backend.service.AlbumService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -95,10 +97,43 @@ public class AlbumController {
                 ));
     }
 
+    @Operation(summary = "Upload de múltiplas capas do álbum")
+    @ApiResponses({
+    @ApiResponse(responseCode = "201", description = "Capas enviadas"),
+    @ApiResponse(responseCode = "400", description = "Arquivos inválidos"),
+    @ApiResponse(responseCode = "404", description = "Álbum não encontrado")
+    })
+    @PostMapping("/{id}/covers")
+    public ResponseEntity<ApiSuccessResponse<AlbumCoverResDTO>> uploadCovers(
+            @PathVariable Long id,
+            @RequestParam("files") List<MultipartFile> files,
+            HttpServletRequest http
+    ) {
+        AlbumCoverResDTO response = service.uploadCovers(id, files);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiSuccessResponse<>(
+                        201,
+                        files.size() + " capa(s) do álbum enviada(s) com sucesso",
+                        response,
+                        http.getRequestURI()
+                ));
+    }
+
     @GetMapping("/{id}/cover-url")
     public ResponseEntity<AlbumCoverUrlDTO> getCoverUrl(@PathVariable Long id) {
         String url = service.getCoverUrl(id);
+        if (url == null) {
+            return ResponseEntity.ok(new AlbumCoverUrlDTO(null));
+        }
         return ResponseEntity.ok(new AlbumCoverUrlDTO(url));
+    }
+
+    @Operation(summary = "Lista todas as URLs das capas do álbum")
+    @GetMapping("/{id}/cover-urls")
+    public ResponseEntity<java.util.List<String>> getAllCoverUrls(@PathVariable Long id) {
+        java.util.List<String> urls = service.getAllCoverUrls(id);
+        return ResponseEntity.ok(urls);
     }
 
 }

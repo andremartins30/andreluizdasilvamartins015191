@@ -3,6 +3,7 @@ package mt.gov.seplag.backend.service;
 
 import mt.gov.seplag.backend.domain.album.Album;
 import mt.gov.seplag.backend.domain.album.AlbumRepository;
+import mt.gov.seplag.backend.domain.album.AlbumCoverRepository;
 import mt.gov.seplag.backend.domain.artist.Artist;
 import mt.gov.seplag.backend.domain.artist.ArtistRepository;
 import mt.gov.seplag.backend.service.storage.MinioService;
@@ -26,15 +27,18 @@ public class AlbumService {
     private final ArtistRepository artistRepository;
     private final MinioService minioService;
     private final AlbumNotificationService notificationService;
+    private final AlbumCoverRepository albumCoverRepository;
 
     public AlbumService(MinioService minioService, 
                        AlbumRepository albumRepository, 
                        ArtistRepository artistRepository,
-                       AlbumNotificationService notificationService) {
+                       AlbumNotificationService notificationService,
+                       AlbumCoverRepository albumCoverRepository) {
         this.minioService = minioService;
         this.albumRepository = albumRepository;
         this.artistRepository = artistRepository;
         this.notificationService = notificationService;
+        this.albumCoverRepository = albumCoverRepository;
     }
 
     public Page<AlbumResponseDTO> listar(String artist, Pageable pageable) {
@@ -107,47 +111,61 @@ public class AlbumService {
     }
 
     public AlbumCoverResDTO uploadCover(Long albumId, MultipartFile file) {
+        List<MultipartFile> files = List.of(file);
+        return uploadCovers(albumId, files);
+    }
+
+    public AlbumCoverResDTO uploadCovers(Long albumId, List<MultipartFile> files) {
         Album album = albumRepository.findById(albumId)
                 .orElseThrow(() -> new NotFoundException("Álbum não encontrado"));
 
-        // Validação de arquivo vazio
-        if (file.isEmpty()) {
-            throw new FileValidationException("Arquivo não pode estar vazio");
+        if (files == null || files.isEmpty()) {
+            throw new FileValidationException("Nenhum arquivo foi enviado");
         }
 
-        // Validação de tipo de arquivo
-        if (!List.of("image/jpeg", "image/png", "image/jpg").contains(file.getContentType())) {
-            throw new FileValidationException("Formato de imagem inválido. Apenas JPEG e PNG são permitidos");
-        }
+        java.util.List<String> uploadedUrls = new java.util.ArrayList<>();
+        String lastObjectName = null;
 
-        // Validação de tamanho (5MB)
-        long maxSize = 5 * 1024 * 1024; // 5MB
-        if (file.getSize() > maxSize) {
-            throw new FileValidationException("Imagem excede o tamanho máximo permitido de 5MB");
-        }
-
-        // Remove a capa antiga se existir
-        if (album.getCoverObjectName() != null) {
-            try {
-                minioService.removeObject(album.getCoverObjectName());
-            } catch (Exception e) {
-                // Log do erro, mas não interrompe o fluxo
-                System.err.println("Erro ao remover capa antiga: " + e.getMessage());
+        for (MultipartFile file : files) {
+            // Validação de arquivo vazio
+            if (file.isEmpty()) {
+                continue; // Pular arquivos vazios
             }
+
+            // Validação de tipo de arquivo
+            if (!List.of("image/jpeg", "image/png", "image/jpg").contains(file.getContentType())) {
+                throw new FileValidationException("Formato de imagem inválido. Apenas JPEG e PNG são permitidos");
+            }
+
+            // Validação de tamanho (5MB)
+            long maxSize = 5 * 1024 * 1024; // 5MB
+            if (file.getSize() > maxSize) {
+                throw new FileValidationException("Imagem excede o tamanho máximo permitido de 5MB");
+            }
+
+            // Upload da nova capa
+            String objectName = minioService.upload(file, albumId);
+            lastObjectName = objectName;
+
+            // Criar registro de capa
+            mt.gov.seplag.backend.domain.album.AlbumCover cover = 
+                new mt.gov.seplag.backend.domain.album.AlbumCover(album, objectName);
+            albumCoverRepository.save(cover);
+
+            String url = minioService.generatePresignedUrl(objectName);
+            uploadedUrls.add(url);
         }
 
-        // Upload da nova capa com estrutura de pastas
-        String objectName = minioService.upload(file, albumId);
-
-        album.setCoverObjectName(objectName);
-        albumRepository.save(album);
-
-        String url = minioService.generatePresignedUrl(objectName);
+        // Manter compatibilidade com cover_object_name (última imagem)
+        if (lastObjectName != null) {
+            album.setCoverObjectName(lastObjectName);
+            albumRepository.save(album);
+        }
 
         return new AlbumCoverResDTO(
                 album.getId(),
-                objectName,
-                url
+                lastObjectName,
+                uploadedUrls.isEmpty() ? null : uploadedUrls.get(uploadedUrls.size() - 1)
         );
     }
 
@@ -156,10 +174,22 @@ public class AlbumService {
             .orElseThrow(() -> new NotFoundException("Álbum não encontrado"));
 
         if (album.getCoverObjectName() == null) {
-            throw new NotFoundException("Álbum não possui capa cadastrada");
+            return null; // Retorna null ao invés de erro
         }
 
         return minioService.generatePresignedUrl(album.getCoverObjectName());   
+    }
+
+    public java.util.List<String> getAllCoverUrls(Long id) {
+        Album album = albumRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("Álbum não encontrado"));
+
+        java.util.List<mt.gov.seplag.backend.domain.album.AlbumCover> covers = 
+            albumCoverRepository.findByAlbumId(id);
+
+        return covers.stream()
+            .map(cover -> minioService.generatePresignedUrl(cover.getObjectName()))
+            .collect(java.util.stream.Collectors.toList());
     }
 
 
