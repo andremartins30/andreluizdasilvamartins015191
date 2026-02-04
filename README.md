@@ -9,6 +9,7 @@ Projeto desenvolvido como parte do desafio técnico Full stack senior Java + rea
 - Auth JWT
 - Upload de imagens
 - Real time com Websockets
+- Sincronização de Regionais
 - Orquestração com Docker
 
 
@@ -21,3 +22,7 @@ As capas dos álbuns são armazenadas em um serviço MinIO, compatível com a AP
 - As imagens não são expostas diretamente pela API
 - Acesso ocorre via URL pré-assinada com expiração de 30 minutos
 - Os arquivos são versionados por UUID
+
+## Sincronização de Regionais (Requisito Sênior)
+
+Sistema de sincronização de regionais da Polícia Civil com complexidade algorítmica O(n + m).
