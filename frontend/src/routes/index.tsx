@@ -9,6 +9,7 @@ const Artists = lazy(() => import('../pages/Artists/Artists'));
 const ArtistDetail = lazy(() => import('../pages/ArtistDetail/ArtistDetail'));
 const ArtistForm = lazy(() => import('../pages/ArtistForm/ArtistForm'));
 const AlbumForm = lazy(() => import('../pages/AlbumForm/AlbumForm'));
+const Regionais = lazy(() => import('../pages/Regionais/Regionais'));
 
 export function AppRoutes() {
     const { token } = useAuth();
@@ -77,6 +78,16 @@ export function AppRoutes() {
                         <ProtectedRoute>
                             <Navbar />
                             <AlbumForm />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/regionais"
+                    element={
+                        <ProtectedRoute>
+                            <Navbar />
+                            <Regionais />
                         </ProtectedRoute>
                     }
                 />
