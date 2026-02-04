@@ -34,16 +34,20 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         
         // Pular rate limiting para endpoints públicos
         String path = request.getRequestURI();
+        String method = request.getMethod();
+        
         if (path.startsWith("/api/v1/auth/") || 
             path.startsWith("/actuator/") || 
             path.startsWith("/swagger-ui/") ||
-            path.startsWith("/v3/api-docs/")) {
+            path.startsWith("/v3/api-docs/") ||
+            path.startsWith("/ws")) {
             filterChain.doFilter(request, response);
             return;
         }
-
+        
+        // Rate limit mais brando para GET (consultas)
         String key = getClientKey(request);
-        Bucket bucket = resolveBucket(key);
+        Bucket bucket = resolveBucket(key, method);
 
         if (bucket.tryConsume(1)) {
             long remaining = bucket.getAvailableTokens();
@@ -53,20 +57,23 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
             response.setContentType("application/json");
             response.getWriter().write(
-                "{\"message\": \"Limite de requisições excedido. Máximo de 10 requisições por minuto.\", " +
+                "{\"message\": \"Limite de requisições excedido. Tente novamente em alguns segundos.\", " +
                 "\"status\": 429}"
             );
         }
     }
 
-    private Bucket resolveBucket(String key) {
-        return cache.computeIfAbsent(key, k -> createNewBucket());
+    private Bucket resolveBucket(String key, String method) {
+        String bucketKey = key + ":" + (method.equals("GET") ? "READ" : "WRITE");
+        return cache.computeIfAbsent(bucketKey, k -> createNewBucket(method));
     }
 
-    private Bucket createNewBucket() {
-        Bandwidth limit = Bandwidth.classic(100, Refill.intervally(100, Duration.ofMinutes(1)));
+    private Bucket createNewBucket(String method) {
+        // GET: 200 req/min, outros: 50 req/min
+        int limit = method.equals("GET") ? 100 : 50;
+        Bandwidth bandwidthLimit = Bandwidth.classic(limit, Refill.intervally(limit, Duration.ofMinutes(1)));
         return Bucket.builder()
-                .addLimit(limit)
+                .addLimit(bandwidthLimit)
                 .build();
     }
 
