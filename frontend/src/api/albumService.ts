@@ -63,6 +63,23 @@ export function uploadAlbumCover(id: number, file: File) {
     });
 }
 
+export function uploadAlbumCovers(id: number, files: File[]) {
+    const formData = new FormData();
+    files.forEach(file => {
+        formData.append('files', file);
+    });
+
+    return api.post(`/albums/${id}/covers`, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    });
+}
+
 export function getAlbumCoverUrl(id: number) {
     return api.get<{ url: string }>(`/albums/${id}/cover-url`);
+}
+
+export function getAlbumCoverUrls(id: number) {
+    return api.get<string[]>(`/albums/${id}/cover-urls`);
 }

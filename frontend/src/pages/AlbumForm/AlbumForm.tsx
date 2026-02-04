@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { createAlbum, updateAlbum, getAlbumById, uploadAlbumCover, getAlbumCoverUrl } from '../../api/albumService';
+import { createAlbum, updateAlbum, getAlbumById, uploadAlbumCovers, getAlbumCoverUrls } from '../../api/albumService';
 import { getArtists, type Artist } from '../../api/artistService';
 import toast from 'react-hot-toast';
 import { ChevronLeft } from 'lucide-react';
@@ -14,9 +14,9 @@ export default function AlbumForm() {
     const [title, setTitle] = useState('');
     const [artistId, setArtistId] = useState<number | ''>('');
     const [artists, setArtists] = useState<Artist[]>([]);
-    const [coverFile, setCoverFile] = useState<File | null>(null);
-    const [coverPreview, setCoverPreview] = useState<string>('');
-    const [currentCoverUrl, setCurrentCoverUrl] = useState<string>('');
+    const [coverFiles, setCoverFiles] = useState<File[]>([]);
+    const [coverPreviews, setCoverPreviews] = useState<string[]>([]);
+    const [currentCoverUrls, setCurrentCoverUrls] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -50,13 +50,14 @@ export default function AlbumForm() {
             setTitle(response.data.title);
             setArtistId(response.data.artistId);
 
-            // Carregar capa existente
+            // Carregar todas as capas existentes
             try {
-                const coverResponse = await getAlbumCoverUrl(Number(id));
-                setCurrentCoverUrl(coverResponse.data.url);
+                const coverResponse = await getAlbumCoverUrls(Number(id));
+                if (coverResponse.data && coverResponse.data.length > 0) {
+                    setCurrentCoverUrls(coverResponse.data);
+                }
             } catch (err) {
-                // Álbum sem capa
-                console.log('Álbum sem capa');
+                console.log('Álbum sem capas');
             }
         } catch (err) {
             toast.error('Erro ao carregar álbum');
@@ -65,29 +66,40 @@ export default function AlbumForm() {
     }
 
     function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-        const file = e.target.files?.[0];
-        if (!file) return;
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
 
-        // Validar tipo de arquivo
-        if (!file.type.startsWith('image/')) {
-            toast.error('Por favor, selecione uma imagem');
-            return;
+        // Validar arquivos
+        const validFiles: File[] = [];
+        const previews: string[] = [];
+
+        for (const file of files) {
+            // Validar tipo de arquivo
+            if (!file.type.startsWith('image/')) {
+                toast.error(`${file.name} não é uma imagem válida`);
+                continue;
+            }
+
+            // Validar tamanho (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error(`${file.name} é muito grande. Tamanho máximo: 5MB`);
+                continue;
+            }
+
+            validFiles.push(file);
+
+            // Preview
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                previews.push(reader.result as string);
+                if (previews.length === validFiles.length) {
+                    setCoverPreviews(previews);
+                }
+            };
+            reader.readAsDataURL(file);
         }
 
-        // Validar tamanho (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            toast.error('Imagem muito grande. Tamanho máximo: 5MB');
-            return;
-        }
-
-        setCoverFile(file);
-
-        // Preview
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            setCoverPreview(reader.result as string);
-        };
-        reader.readAsDataURL(file);
+        setCoverFiles(validFiles);
     }
 
     async function handleSubmit(e: React.FormEvent) {
@@ -118,12 +130,12 @@ export default function AlbumForm() {
             }
 
             // Upload da capa se selecionada
-            if (coverFile) {
+            if (coverFiles.length > 0) {
                 try {
-                    await uploadAlbumCover(albumId, coverFile);
-                    toast.success('Capa enviada com sucesso!');
+                    await uploadAlbumCovers(albumId, coverFiles);
+                    toast.success(`${coverFiles.length} capa(s) enviada(s) com sucesso!`);
                 } catch (err) {
-                    toast.error('Erro ao enviar capa');
+                    toast.error('Erro ao enviar capas');
                 }
             }
 
@@ -189,17 +201,24 @@ export default function AlbumForm() {
 
                     <div>
                         <label htmlFor="cover" className="block text-sm font-medium text-gray-700 mb-1">
-                            {isEditing && currentCoverUrl ? 'Alterar Capa do Álbum' : 'Capa do Álbum'}
+                            {isEditing && currentCoverUrls.length > 0 ? 'Adicionar/Alterar Capas do Álbum' : 'Capas do Álbum'}
                         </label>
 
-                        {isEditing && currentCoverUrl && !coverPreview && (
+                        {isEditing && currentCoverUrls.length > 0 && coverPreviews.length === 0 && (
                             <div className="mb-3">
-                                <p className="text-sm text-gray-600 mb-2">Capa atual:</p>
-                                <img
-                                    src={currentCoverUrl}
-                                    alt="Capa atual"
-                                    className="w-48 h-48 object-cover rounded-lg shadow"
-                                />
+                                <p className="text-sm text-gray-600 mb-2">
+                                    {currentCoverUrls.length} capa(s) atual(is):
+                                </p>
+                                <div className="grid grid-cols-3 gap-4">
+                                    {currentCoverUrls.map((url, index) => (
+                                        <img
+                                            key={index}
+                                            src={url}
+                                            alt={`Capa ${index + 1}`}
+                                            className="w-full h-32 object-cover rounded-lg shadow"
+                                        />
+                                    ))}
+                                </div>
                             </div>
                         )}
 
@@ -207,22 +226,30 @@ export default function AlbumForm() {
                             id="cover"
                             type="file"
                             accept="image/*"
+                            multiple
                             onChange={handleFileChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
                         />
                         <p className="text-xs text-gray-500 mt-1">
-                            Formatos aceitos: JPG, PNG. Tamanho máximo: 5MB
+                            Formatos aceitos: JPG, PNG. Tamanho máximo por imagem: 5MB. Você pode selecionar múltiplas imagens.
                         </p>
                     </div>
 
-                    {coverPreview && (
+                    {coverPreviews.length > 0 && (
                         <div className="mt-4">
-                            <p className="text-sm font-medium text-gray-700 mb-2">Nova capa:</p>
-                            <img
-                                src={coverPreview}
-                                alt="Preview da capa"
-                                className="w-48 h-48 object-cover rounded-lg shadow"
-                            />
+                            <p className="text-sm font-medium text-gray-700 mb-2">
+                                {coverPreviews.length} nova(s) capa(s):
+                            </p>
+                            <div className="grid grid-cols-3 gap-4">
+                                {coverPreviews.map((preview, index) => (
+                                    <img
+                                        key={index}
+                                        src={preview}
+                                        alt={`Preview ${index + 1}`}
+                                        className="w-full h-32 object-cover rounded-lg shadow"
+                                    />
+                                ))}
+                            </div>
                         </div>
                     )}
 

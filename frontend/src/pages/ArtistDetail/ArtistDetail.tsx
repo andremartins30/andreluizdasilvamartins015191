@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getArtistById, type Artist } from '../../api/artistService';
-import { getAlbums, getAlbumCoverUrl, deleteAlbum, type Album } from '../../api/albumService';
+import { getAlbums, getAlbumCoverUrls, deleteAlbum, type Album } from '../../api/albumService';
 import toast from 'react-hot-toast';
 import { ChevronLeft, Plus, Pencil, Trash2, Music } from 'lucide-react';
 
@@ -12,7 +12,7 @@ export default function ArtistDetail() {
     const [artist, setArtist] = useState<Artist | null>(null);
     const [albums, setAlbums] = useState<Album[]>([]);
     const [loading, setLoading] = useState(true);
-    const [coverUrls, setCoverUrls] = useState<Record<number, string>>({});
+    const [coverUrls, setCoverUrls] = useState<Record<number, string[]>>({});
 
     useEffect(() => {
         if (!id) return;
@@ -49,14 +49,15 @@ export default function ArtistDetail() {
     }
 
     async function loadCoverUrls(albums: Album[]) {
-        const urls: Record<number, string> = {};
+        const urls: Record<number, string[]> = {};
 
         for (const album of albums) {
             try {
-                const response = await getAlbumCoverUrl(album.id);
-                urls[album.id] = response.data.url;
+                const response = await getAlbumCoverUrls(album.id);
+                if (response.data && response.data.length > 0) {
+                    urls[album.id] = response.data;
+                }
             } catch (err) {
-                // Álbum sem capa, ignorar erro
                 console.log(`Álbum ${album.id} sem capa`);
             }
         }
@@ -152,13 +153,20 @@ export default function ArtistDetail() {
                             key={album.id}
                             className="bg-white rounded-lg border border-gray-200 hover:shadow-lg hover:border-gray-300 transition-all p-4"
                         >
-                            <div className="aspect-square bg-gray-100 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
-                                {coverUrls[album.id] ? (
-                                    <img
-                                        src={coverUrls[album.id]}
-                                        alt={`Capa de ${album.title}`}
-                                        className="w-full h-full object-cover"
-                                    />
+                            <div className="aspect-square bg-gray-100 rounded-lg mb-3 flex items-center justify-center overflow-hidden relative">
+                                {coverUrls[album.id] && coverUrls[album.id].length > 0 ? (
+                                    <>
+                                        <img
+                                            src={coverUrls[album.id][0]}
+                                            alt={`Capa de ${album.title}`}
+                                            className="w-full h-full object-cover"
+                                        />
+                                        {coverUrls[album.id].length > 1 && (
+                                            <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full">
+                                                +{coverUrls[album.id].length - 1}
+                                            </div>
+                                        )}
+                                    </>
                                 ) : (
                                     <Music size={48} className="text-gray-300" />
                                 )}
