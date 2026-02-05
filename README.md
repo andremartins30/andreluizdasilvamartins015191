@@ -54,9 +54,18 @@ cp .env.example .env
 ```
 
 3. Inicie todos os serviços:
+
+**Primeira execução (com configuração do MinIO):**
 ```bash
-docker compose up --build
+docker compose --profile setup up --build -d
 ```
+
+**Execuções subsequentes:**
+```bash
+docker compose up --build -d
+```
+
+> **Nota**: O `--profile setup` na primeira execução garante que o bucket do MinIO seja criado e configurado corretamente. Nas próximas execuções, use apenas `docker compose up --build -d`.
 
 4. Aguarde a inicialização completa (aproximadamente 2 minutos na primeira execução).
 
