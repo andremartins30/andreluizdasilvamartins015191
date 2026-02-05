@@ -10,7 +10,11 @@ RUN mvn dependency:go-offline -B
 
 COPY src ./src
 
+# Opção 1: Build SEM testes (mais rápido, recomendado para produção)
 RUN mvn clean package -DskipTests
+
+# Opção 2: Build COM testes (descomente para validação completa)
+# RUN mvn clean package
 
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app

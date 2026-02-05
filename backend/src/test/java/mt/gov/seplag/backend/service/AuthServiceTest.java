@@ -42,7 +42,7 @@ class AuthServiceTest {
         RegisterRequestDTO request = new RegisterRequestDTO("newuser", "pass123");
         User savedUser = new User();
         savedUser.setUsername("newuser");
-        
+
         when(userRepository.existsByUsername("newuser")).thenReturn(false);
         when(passwordEncoder.encode("pass123")).thenReturn("encoded");
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
@@ -70,7 +70,7 @@ class AuthServiceTest {
         User user = new User();
         user.setUsername("user");
         user.setPassword("encoded");
-        
+
         when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("pass", "encoded")).thenReturn(true);
         when(jwtService.generateToken("user")).thenReturn("token");
@@ -94,7 +94,7 @@ class AuthServiceTest {
     void refreshToken_DeveRetornarNovosTokens_QuandoTokenValido() {
         User user = new User();
         user.setUsername("user");
-        
+
         when(jwtService.isTokenValid("valid-token")).thenReturn(true);
         when(jwtService.extractUsername("valid-token")).thenReturn("user");
         when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
@@ -105,5 +105,53 @@ class AuthServiceTest {
 
         assertNotNull(result);
         assertEquals("new-token", result.token());
+    }
+
+    @Test
+    void login_DeveLancarExcecao_QuandoSenhaInvalida() {
+        // Arrange
+        LoginRequestDTO request = new LoginRequestDTO("user", "wrongpassword");
+        User user = new User();
+        user.setUsername("user");
+        user.setPassword("encoded");
+
+        when(userRepository.findByUsername("user")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("wrongpassword", "encoded")).thenReturn(false);
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> authService.login(request));
+
+        verify(userRepository).findByUsername("user");
+        verify(passwordEncoder).matches("wrongpassword", "encoded");
+        verify(jwtService, never()).generateToken(anyString());
+    }
+
+    @Test
+    void refreshToken_DeveLancarExcecao_QuandoTokenInvalido() {
+        // Arrange
+        when(jwtService.isTokenValid("invalid-token")).thenReturn(false);
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> authService.refreshToken("invalid-token"));
+
+        verify(jwtService).isTokenValid("invalid-token");
+        verify(jwtService, never()).extractUsername(anyString());
+        verify(userRepository, never()).findByUsername(anyString());
+    }
+
+    @Test
+    void refreshToken_DeveLancarExcecao_QuandoUsuarioNaoExisteMaisAposValidacaoToken() {
+        // Arrange
+        when(jwtService.isTokenValid("valid-token")).thenReturn(true);
+        when(jwtService.extractUsername("valid-token")).thenReturn("deleteduser");
+        when(userRepository.findByUsername("deleteduser")).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(NotFoundException.class, () -> authService.refreshToken("valid-token"));
+
+        verify(jwtService).isTokenValid("valid-token");
+        verify(jwtService).extractUsername("valid-token");
+        verify(userRepository).findByUsername("deleteduser");
+        verify(jwtService, never()).generateToken(anyString());
     }
 }
