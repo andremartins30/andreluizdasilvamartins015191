@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:${POSTGRES_PORT:5433}/${POSTGRES_DB:seplagdb}
+    url: jdbc:postgresql://localhost:${POSTGRES_PORT:5432}/${POSTGRES_DB:seplagdb}
     username: ${POSTGRES_USER:seplag}
     password: ${POSTGRES_PASSWORD:seplag}
     driver-class-name: org.postgresql.Driver
@@ -26,7 +26,7 @@ app:
     allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
 
 minio:
-  url: ${MINIO_URL:http://minio:9000}
+  url: ${MINIO_URL:http://localhost:9000}
   public-url: ${MINIO_PUBLIC_URL:http://localhost:9000}
   access-key: ${MINIO_ROOT_USER:admin}
   secret-key: ${MINIO_ROOT_PASSWORD:admin123}
@@ -52,3 +52,17 @@ management:
       enabled: true
     readinessState:
       enabled: true
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operationsSorter: method
+    tagsSorter: alpha
+    displayRequestDuration: true
+    tryItOutEnabled: true
+    filter: true
+  show-actuator: false
