@@ -52,13 +52,26 @@ export default function ArtistList() {
     async function handleDelete(id: number, name: string, e: React.MouseEvent) {
         e.stopPropagation();
 
-        if (!confirm(`Tem certeza que deseja excluir o artista "${name}"?`)) {
+        const artist = artists.find(a => a.id === id);
+        const albumCount = artist?.albumsCount || 0;
+
+        let confirmMessage = `Tem certeza que deseja excluir o artista "${name}"?`;
+
+        if (albumCount > 0) {
+            confirmMessage = `ATENÇÃO: O artista "${name}" possui ${albumCount} ${albumCount === 1 ? 'álbum' : 'álbuns'}.\n\nAo excluir este artista, TODOS os álbuns também serão excluídos permanentemente.\n\nDeseja continuar?`;
+        }
+
+        if (!confirm(confirmMessage)) {
             return;
         }
 
         try {
             await deleteArtist(id);
-            toast.success('Artista excluído com sucesso!');
+            if (albumCount > 0) {
+                toast.success(`Artista e ${albumCount} ${albumCount === 1 ? 'álbum excluídos' : 'álbuns excluídos'} com sucesso!`);
+            } else {
+                toast.success('Artista excluído com sucesso!');
+            }
             loadArtists();
         } catch (err: any) {
             const errorMessage = err?.response?.data?.message || 'Erro ao excluir artista';

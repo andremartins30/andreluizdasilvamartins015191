@@ -83,3 +83,9 @@ export function getAlbumCoverUrl(id: number) {
 export function getAlbumCoverUrls(id: number) {
     return api.get<string[]>(`/albums/${id}/cover-urls`);
 }
+
+export function deleteAlbumCover(albumId: number, objectName: string) {
+    return api.delete(`/albums/${albumId}/covers`, {
+        params: { objectName }
+    });
+}

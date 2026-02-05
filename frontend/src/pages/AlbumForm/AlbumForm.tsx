@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { createAlbum, updateAlbum, getAlbumById, uploadAlbumCovers, getAlbumCoverUrls } from '../../api/albumService';
+import { createAlbum, updateAlbum, getAlbumById, uploadAlbumCovers, getAlbumCoverUrls, deleteAlbumCover } from '../../api/albumService';
 import { getArtists, type Artist } from '../../api/artistService';
 import toast from 'react-hot-toast';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, X } from 'lucide-react';
 
 export default function AlbumForm() {
     const { id } = useParams<{ id: string }>();
@@ -102,19 +102,52 @@ export default function AlbumForm() {
         setCoverFiles(validFiles);
     }
 
+    function handleRemovePreview(index: number) {
+        const newFiles = coverFiles.filter((_, i) => i !== index);
+        const newPreviews = coverPreviews.filter((_, i) => i !== index);
+
+        setCoverFiles(newFiles);
+        setCoverPreviews(newPreviews);
+
+        // Resetar o input file para permitir selecionar novamente
+        const fileInput = document.getElementById('cover') as HTMLInputElement;
+        if (fileInput) {
+            fileInput.value = '';
+        }
+    }
+
+    async function handleRemoveExistingCover(url: string, index: number) {
+        if (!id) return;
+
+        if (!confirm('Deseja realmente remover esta capa?')) {
+            return;
+        }
+
+        try {
+            // Extrair o objectName da URL
+            const urlParams = new URLSearchParams(url.split('?')[1]);
+            const objectName = urlParams.get('path');
+
+            if (!objectName) {
+                toast.error('Erro ao identificar a capa');
+                return;
+            }
+
+            await deleteAlbumCover(Number(id), objectName);
+
+            // Atualizar a lista de capas
+            const newCoverUrls = currentCoverUrls.filter((_, i) => i !== index);
+            setCurrentCoverUrls(newCoverUrls);
+
+            toast.success('Capa removida com sucesso!');
+        } catch (err: any) {
+            const errorMessage = err?.response?.data?.message || 'Erro ao remover capa';
+            toast.error(errorMessage);
+        }
+    }
+
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-
-        if (!title.trim()) {
-            toast.error('Título do álbum é obrigatório');
-            return;
-        }
-
-        if (!artistId) {
-            toast.error('Selecione um artista');
-            return;
-        }
-
         setLoading(true);
         try {
             let albumId: number;
@@ -204,19 +237,28 @@ export default function AlbumForm() {
                             {isEditing && currentCoverUrls.length > 0 ? 'Adicionar/Alterar Capas do Álbum' : 'Capas do Álbum'}
                         </label>
 
-                        {isEditing && currentCoverUrls.length > 0 && coverPreviews.length === 0 && (
+                        {isEditing && currentCoverUrls.length > 0 && (
                             <div className="mb-3">
                                 <p className="text-sm text-gray-600 mb-2">
                                     {currentCoverUrls.length} capa(s) atual(is):
                                 </p>
                                 <div className="grid grid-cols-3 gap-4">
                                     {currentCoverUrls.map((url, index) => (
-                                        <img
-                                            key={index}
-                                            src={`http://localhost:8080${url}`}
-                                            alt={`Capa ${index + 1}`}
-                                            className="w-full h-32 object-cover rounded-lg shadow"
-                                        />
+                                        <div key={index} className="relative group">
+                                            <img
+                                                src={`http://localhost:8080${url}`}
+                                                alt={`Capa ${index + 1}`}
+                                                className="w-full aspect-square object-cover rounded-lg shadow"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveExistingCover(url, index)}
+                                                className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-lg opacity-0 group-hover:opacity-100"
+                                                title="Remover capa"
+                                            >
+                                                <X size={16} />
+                                            </button>
+                                        </div>
                                     ))}
                                 </div>
                             </div>
@@ -242,12 +284,21 @@ export default function AlbumForm() {
                             </p>
                             <div className="grid grid-cols-3 gap-4">
                                 {coverPreviews.map((preview, index) => (
-                                    <img
-                                        key={index}
-                                        src={preview}
-                                        alt={`Preview ${index + 1}`}
-                                        className="w-full h-32 object-cover rounded-lg shadow"
-                                    />
+                                    <div key={index} className="relative group">
+                                        <img
+                                            src={preview}
+                                            alt={`Preview ${index + 1}`}
+                                            className="w-full aspect-square object-cover rounded-lg shadow"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemovePreview(index)}
+                                            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-lg opacity-0 group-hover:opacity-100"
+                                            title="Remover imagem"
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    </div>
                                 ))}
                             </div>
                         </div>
