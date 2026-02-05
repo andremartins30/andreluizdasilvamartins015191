@@ -1,6 +1,5 @@
 package mt.gov.seplag.backend.service;
 
-
 import mt.gov.seplag.backend.domain.album.Album;
 import mt.gov.seplag.backend.domain.album.AlbumRepository;
 import mt.gov.seplag.backend.domain.album.AlbumCoverRepository;
@@ -29,11 +28,11 @@ public class AlbumService {
     private final AlbumNotificationService notificationService;
     private final AlbumCoverRepository albumCoverRepository;
 
-    public AlbumService(MinioService minioService, 
-                       AlbumRepository albumRepository, 
-                       ArtistRepository artistRepository,
-                       AlbumNotificationService notificationService,
-                       AlbumCoverRepository albumCoverRepository) {
+    public AlbumService(MinioService minioService,
+            AlbumRepository albumRepository,
+            ArtistRepository artistRepository,
+            AlbumNotificationService notificationService,
+            AlbumCoverRepository albumCoverRepository) {
         this.minioService = minioService;
         this.albumRepository = albumRepository;
         this.artistRepository = artistRepository;
@@ -54,8 +53,7 @@ public class AlbumService {
                 a.getId(),
                 a.getTitle(),
                 a.getArtist().getId(),
-                a.getArtist().getName()
-        ));
+                a.getArtist().getName()));
     }
 
     public AlbumResponseDTO buscarPorId(Long id) {
@@ -106,8 +104,7 @@ public class AlbumService {
                 album.getId(),
                 album.getTitle(),
                 album.getArtist().getId(),
-                album.getArtist().getName()
-        );
+                album.getArtist().getName());
     }
 
     public AlbumCoverResDTO uploadCover(Long albumId, MultipartFile file) {
@@ -148,8 +145,8 @@ public class AlbumService {
             lastObjectName = objectName;
 
             // Criar registro de capa
-            mt.gov.seplag.backend.domain.album.AlbumCover cover = 
-                new mt.gov.seplag.backend.domain.album.AlbumCover(album, objectName);
+            mt.gov.seplag.backend.domain.album.AlbumCover cover = new mt.gov.seplag.backend.domain.album.AlbumCover(
+                    album, objectName);
             albumCoverRepository.save(cover);
 
             String url = minioService.generatePresignedUrl(objectName);
@@ -165,32 +162,63 @@ public class AlbumService {
         return new AlbumCoverResDTO(
                 album.getId(),
                 lastObjectName,
-                uploadedUrls.isEmpty() ? null : uploadedUrls.get(uploadedUrls.size() - 1)
-        );
+                uploadedUrls.isEmpty() ? null : uploadedUrls.get(uploadedUrls.size() - 1));
     }
 
     public String getCoverUrl(Long id) {
         Album album = albumRepository.findById(id)
-            .orElseThrow(() -> new NotFoundException("Álbum não encontrado"));
+                .orElseThrow(() -> new NotFoundException("Álbum não encontrado"));
 
         if (album.getCoverObjectName() == null) {
             return null; // Retorna null ao invés de erro
         }
 
-        return minioService.generatePresignedUrl(album.getCoverObjectName());   
+        return minioService.generatePresignedUrl(album.getCoverObjectName());
     }
 
     public java.util.List<String> getAllCoverUrls(Long id) {
         Album album = albumRepository.findById(id)
-            .orElseThrow(() -> new NotFoundException("Álbum não encontrado"));
+                .orElseThrow(() -> new NotFoundException("Álbum não encontrado"));
 
-        java.util.List<mt.gov.seplag.backend.domain.album.AlbumCover> covers = 
-            albumCoverRepository.findByAlbumId(id);
+        java.util.List<mt.gov.seplag.backend.domain.album.AlbumCover> covers = albumCoverRepository.findByAlbumId(id);
 
         return covers.stream()
-            .map(cover -> minioService.generatePresignedUrl(cover.getObjectName()))
-            .collect(java.util.stream.Collectors.toList());
+                .map(cover -> minioService.generatePresignedUrl(cover.getObjectName()))
+                .collect(java.util.stream.Collectors.toList());
     }
 
+    public void deleteCover(Long albumId, String objectName) {
+        Album album = albumRepository.findById(albumId)
+                .orElseThrow(() -> new NotFoundException("Álbum não encontrado"));
+
+        // Buscar a capa pelo objectName
+        java.util.List<mt.gov.seplag.backend.domain.album.AlbumCover> covers = albumCoverRepository
+                .findByAlbumId(albumId);
+
+        mt.gov.seplag.backend.domain.album.AlbumCover coverToDelete = covers.stream()
+                .filter(cover -> cover.getObjectName().equals(objectName))
+                .findFirst()
+                .orElseThrow(() -> new NotFoundException("Capa não encontrada"));
+
+        // Remover do MinIO
+        minioService.removeObject(objectName);
+
+        // Remover do banco de dados
+        albumCoverRepository.delete(coverToDelete);
+
+        // Se a capa deletada era a principal, atualizar
+        if (objectName.equals(album.getCoverObjectName())) {
+            // Buscar a primeira capa restante (se houver)
+            java.util.List<mt.gov.seplag.backend.domain.album.AlbumCover> remainingCovers = albumCoverRepository
+                    .findByAlbumId(albumId);
+
+            if (!remainingCovers.isEmpty()) {
+                album.setCoverObjectName(remainingCovers.get(0).getObjectName());
+            } else {
+                album.setCoverObjectName(null);
+            }
+            albumRepository.save(album);
+        }
+    }
 
 }

@@ -5,10 +5,12 @@ import mt.gov.seplag.backend.web.artist.ArtistResponseDTO;
 
 import mt.gov.seplag.backend.domain.artist.Artist;
 import mt.gov.seplag.backend.domain.artist.ArtistRepository;
+import mt.gov.seplag.backend.domain.album.Album;
 import mt.gov.seplag.backend.domain.album.AlbumRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import mt.gov.seplag.backend.shared.exception.NotFoundException;
 
 import java.util.List;
@@ -26,13 +28,13 @@ public class ArtistService {
 
     public Page<ArtistResponseDTO> listarTodos(String name, Pageable pageable) {
         Page<Artist> artists;
-        
+
         if (name != null && !name.isEmpty()) {
             artists = repository.findByNameContainingIgnoreCase(name, pageable);
         } else {
             artists = repository.findAll(pageable);
         }
-        
+
         return artists.map(this::toDTO);
     }
 
@@ -63,13 +65,18 @@ public class ArtistService {
         return toDTO(atualizado);
     }
 
+    @Transactional
     public void remover(Long id) {
         Artist artist = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Artista não encontrado"));
 
+        // Deleta todos os álbuns do artista antes de deletar o artista
+        // O cascade para AlbumCover garante que as capas também sejam removidas
+        albumRepository.deleteByArtist(artist);
+
         repository.delete(artist);
     }
-    
+
     private ArtistResponseDTO toDTO(Artist artist) {
         long albumsCount = albumRepository.countByArtist(artist);
         return new ArtistResponseDTO(artist.getId(), artist.getName(), albumsCount);

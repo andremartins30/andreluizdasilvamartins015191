@@ -41,8 +41,7 @@ public class AlbumController {
     @GetMapping
     public Page<AlbumResponseDTO> listar(
             @RequestParam(required = false) String artist,
-            Pageable pageable
-    ) {
+            Pageable pageable) {
         return service.listar(artist, pageable);
     }
 
@@ -62,8 +61,7 @@ public class AlbumController {
     @PutMapping("/{id}")
     public AlbumResponseDTO atualizar(
             @PathVariable Long id,
-            @Valid @RequestBody AlbumRequestDTO dto
-    ) {
+            @Valid @RequestBody AlbumRequestDTO dto) {
         return service.atualizar(id, dto);
     }
 
@@ -76,16 +74,15 @@ public class AlbumController {
 
     @Operation(summary = "Upload da capa do álbum")
     @ApiResponses({
-    @ApiResponse(responseCode = "201", description = "Capa enviada"),
-    @ApiResponse(responseCode = "400", description = "Arquivo inválido"),
-    @ApiResponse(responseCode = "404", description = "Álbum não encontrado")
+            @ApiResponse(responseCode = "201", description = "Capa enviada"),
+            @ApiResponse(responseCode = "400", description = "Arquivo inválido"),
+            @ApiResponse(responseCode = "404", description = "Álbum não encontrado")
     })
     @PostMapping("/{id}/cover")
     public ResponseEntity<ApiSuccessResponse<AlbumCoverResDTO>> uploadCover(
             @PathVariable Long id,
             @RequestParam("file") MultipartFile file,
-            HttpServletRequest http
-    ) {
+            HttpServletRequest http) {
         AlbumCoverResDTO response = service.uploadCover(id, file);
 
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -93,22 +90,20 @@ public class AlbumController {
                         201,
                         "Capa do álbum enviada com sucesso",
                         response,
-                        http.getRequestURI()
-                ));
+                        http.getRequestURI()));
     }
 
     @Operation(summary = "Upload de múltiplas capas do álbum")
     @ApiResponses({
-    @ApiResponse(responseCode = "201", description = "Capas enviadas"),
-    @ApiResponse(responseCode = "400", description = "Arquivos inválidos"),
-    @ApiResponse(responseCode = "404", description = "Álbum não encontrado")
+            @ApiResponse(responseCode = "201", description = "Capas enviadas"),
+            @ApiResponse(responseCode = "400", description = "Arquivos inválidos"),
+            @ApiResponse(responseCode = "404", description = "Álbum não encontrado")
     })
     @PostMapping("/{id}/covers")
     public ResponseEntity<ApiSuccessResponse<AlbumCoverResDTO>> uploadCovers(
             @PathVariable Long id,
             @RequestParam("files") List<MultipartFile> files,
-            HttpServletRequest http
-    ) {
+            HttpServletRequest http) {
         AlbumCoverResDTO response = service.uploadCovers(id, files);
 
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -116,8 +111,7 @@ public class AlbumController {
                         201,
                         files.size() + " capa(s) do álbum enviada(s) com sucesso",
                         response,
-                        http.getRequestURI()
-                ));
+                        http.getRequestURI()));
     }
 
     @GetMapping("/{id}/cover-url")
@@ -134,6 +128,15 @@ public class AlbumController {
     public ResponseEntity<java.util.List<String>> getAllCoverUrls(@PathVariable Long id) {
         java.util.List<String> urls = service.getAllCoverUrls(id);
         return ResponseEntity.ok(urls);
+    }
+
+    @Operation(summary = "Remove uma capa específica do álbum")
+    @DeleteMapping("/{id}/covers")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteCover(
+            @PathVariable Long id,
+            @RequestParam String objectName) {
+        service.deleteCover(id, objectName);
     }
 
 }
