@@ -213,7 +213,7 @@ export default function AlbumForm() {
                                     {currentCoverUrls.map((url, index) => (
                                         <img
                                             key={index}
-                                            src={url}
+                                            src={`http://localhost:8080${url}`}
                                             alt={`Capa ${index + 1}`}
                                             className="w-full h-32 object-cover rounded-lg shadow"
                                         />

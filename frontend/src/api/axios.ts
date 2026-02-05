@@ -15,7 +15,7 @@ const processQueue = (error: any, token: string | null = null) => {
 };
 
 export const api = axios.create({
-    baseURL: 'http://64.23.178.251:8080/api/v1',
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1',
 });
 
 api.interceptors.request.use(
@@ -62,7 +62,7 @@ api.interceptors.response.use(
 
             try {
                 const response = await axios.post(
-                    'http://64.23.178.251:8080/api/v1/auth/refresh',
+                    `${import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'}/auth/refresh`,
                     null,
                     {
                         headers: {

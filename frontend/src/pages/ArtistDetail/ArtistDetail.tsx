@@ -157,7 +157,7 @@ export default function ArtistDetail() {
                                 {coverUrls[album.id] && coverUrls[album.id].length > 0 ? (
                                     <>
                                         <img
-                                            src={coverUrls[album.id][0]}
+                                            src={`http://localhost:8080${coverUrls[album.id][0]}`}
                                             alt={`Capa de ${album.title}`}
                                             className="w-full h-full object-cover"
                                         />

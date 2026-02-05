@@ -9,8 +9,10 @@ class WebSocketService {
     connect() {
         if (this.connected) return;
 
+        const wsUrl = import.meta.env.VITE_WS_URL || 'http://localhost:8080/ws';
+
         this.client = new Client({
-            webSocketFactory: () => new SockJS('http://64.23.178.251:8080/ws'),
+            webSocketFactory: () => new SockJS(wsUrl),
             debug: (str) => {
                 console.log('STOMP:', str);
             },
