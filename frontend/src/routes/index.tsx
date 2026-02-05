@@ -94,7 +94,7 @@ export function AppRoutes() {
 
                 <Route
                     path="/"
-                    element={<Navigate to="/login" replace />}
+                    element={token ? <Navigate to="/artists" replace /> : <Navigate to="/login" replace />}
                 />
             </Routes>
         </Suspense>

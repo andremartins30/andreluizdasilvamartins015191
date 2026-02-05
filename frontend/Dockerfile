@@ -7,7 +7,7 @@ ARG VITE_WS_URL
 
 COPY package.json package-lock.json* ./
 
-RUN npm ci
+RUN npm install
 
 COPY . .
 
