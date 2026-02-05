@@ -55,24 +55,19 @@ cp .env.example .env
 
 3. Inicie todos os serviços:
 
-**Primeira execução (com configuração do MinIO):**
 ```bash
 docker compose --profile setup up --build -d
 ```
 
-**Execuções subsequentes:**
-```bash
-docker compose up --build -d
-```
-
-> **Nota**: O `--profile setup` na primeira execução garante que o bucket do MinIO seja criado e configurado corretamente. Nas próximas execuções, use apenas `docker compose up --build -d`.
+> **Importante**: O `--profile setup` é necessário para criar e configurar o bucket do MinIO na primeira execução. Após isso, você pode usar apenas `docker compose up -d` nas próximas execuções.
 
 4. Aguarde a inicialização completa (aproximadamente 2 minutos na primeira execução).
 
 5. Acesse a aplicação:
 - **Frontend**: http://localhost:5173
 - **API**: http://localhost:8080
-- **Swagger**: http://localhost:8080/swagger-ui.html
+- **Swagger UI**: http://localhost:8080/swagger-ui/index.html
+- **API Docs (OpenAPI)**: http://localhost:8080/v3/api-docs
 - **MinIO Console**: http://localhost:9001
 
 ### Executando Localmente (Desenvolvimento)
