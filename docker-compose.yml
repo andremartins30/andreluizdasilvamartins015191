@@ -13,7 +13,7 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -24,7 +24,7 @@ services:
     command: server /data --console-address ":9001" --address ":9000"
     environment:
       MINIO_SERVER_URL: ${MINIO_SERVER_URL}
-      MINIO_DOMAIN: 64.23.178.251
+      MINIO_DOMAIN: localhost
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
@@ -40,6 +40,28 @@ services:
       timeout: 10s
       retries: 3
 
+  minio-setup:
+    image: minio/mc:latest
+    container_name: minio-setup
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    networks:
+      - app-network
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      mc alias set myminio http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD};
+      mc mb myminio/album-covers --ignore-existing;
+      mc anonymous set download myminio/album-covers;
+      echo 'MinIO configurado com sucesso!';
+      exit 0;
+      "
+    restart: on-failure
+
   backend:
     build:
       context: ./backend
@@ -52,8 +74,9 @@ services:
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       MINIO_URL: http://minio:9000
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
-      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_PUBLIC_URL: http://host.docker.internal:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       MINIO_BUCKET: album-covers
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
       SPRING_FLYWAY_ENABLED: true
@@ -64,6 +87,8 @@ services:
         condition: service_healthy
     networks:
       - app-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 30s
@@ -76,6 +101,9 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:8080/api/v1}
+        - VITE_WS_URL=${VITE_WS_URL:-http://localhost:8080/ws}
     container_name: frontend
     ports:
       - "${FRONTEND_PORT:-5173}:80"

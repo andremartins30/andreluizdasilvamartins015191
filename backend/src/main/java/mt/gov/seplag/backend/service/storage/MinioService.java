@@ -2,6 +2,7 @@ package mt.gov.seplag.backend.service.storage;
 
 import io.minio.*;
 import io.minio.http.Method;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,19 +13,15 @@ import java.util.UUID;
 public class MinioService {
 
     private final MinioClient minioClient;
+    private final MinioClient publicMinioClient;
 
     @Value("${minio.bucket}")
     private String bucket;
 
-    public MinioService(
-            @Value("${minio.url}") String url,
-            @Value("${minio.access-key}") String accessKey,
-            @Value("${minio.secret-key}") String secretKey
-    ) {
-        this.minioClient = MinioClient.builder()
-            .endpoint(url.trim())
-            .credentials(accessKey.trim(), secretKey.trim())
-            .build();
+    public MinioService(MinioClient minioClient, 
+                       @Qualifier("publicMinioClient") MinioClient publicMinioClient) {
+        this.minioClient = minioClient;
+        this.publicMinioClient = publicMinioClient;
     }
 
 
@@ -90,18 +87,7 @@ public class MinioService {
 
 
     public String generatePresignedUrl(String objectName) {
-        try {
-            String url = minioClient.getPresignedObjectUrl(
-                    GetPresignedObjectUrlArgs.builder()
-                            .bucket(bucket)
-                            .object(objectName)
-                            .method(Method.GET)
-                            .expiry(30 * 60) // 30 minutos
-                            .build()
-            );
-            return url.trim().replaceAll("\\s+", "");
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao gerar URL assinada", e);
-        }
+        // Retorna URL do proxy do backend com query parameter
+        return "/api/v1/media?path=" + objectName;
     }
 }
