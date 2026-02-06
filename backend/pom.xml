@@ -81,6 +81,11 @@
 			<scope>runtime</scope>
 		</dependency>
 		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
@@ -151,7 +156,8 @@
 					</excludes>
 				</configuration>
 			</plugin>
-			<!-- Plugin JaCoCo para relatório de cobertura de testes -->
+			<!-- Plugin JaCoCo para relatório de cobertura de testes - Desabilitado temporariamente devido incompatibilidade com Java 25 -->
+			<!--
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
@@ -191,6 +197,7 @@
 					</execution>
 				</executions>
 			</plugin>
+			-->
 		</plugins>
 	</build>
 

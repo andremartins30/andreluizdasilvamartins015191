@@ -203,8 +203,8 @@ class AlbumServiceTest {
         // Arrange
         AlbumRequestDTO dto = new AlbumRequestDTO("Updated Album", 1L);
 
-        when(albumRepository.findById(1L)).thenReturn(Optional.of(album));
-        when(artistRepository.findById(1L)).thenReturn(Optional.of(artist));
+        when(albumRepository.findByIdAndUser(1L, mockUser)).thenReturn(Optional.of(album));
+        when(artistRepository.findByIdAndUser(1L, mockUser)).thenReturn(Optional.of(artist));
         when(albumRepository.save(any(Album.class))).thenReturn(album);
 
         // Act
@@ -212,8 +212,8 @@ class AlbumServiceTest {
 
         // Assert
         assertNotNull(resultado);
-        verify(albumRepository).findById(1L);
-        verify(artistRepository).findById(1L);
+        verify(albumRepository).findByIdAndUser(1L, mockUser);
+        verify(artistRepository).findByIdAndUser(1L, mockUser);
         verify(albumRepository).save(album);
     }
 
@@ -221,13 +221,13 @@ class AlbumServiceTest {
     @DisplayName("Deve remover álbum com sucesso")
     void deveRemoverAlbum() {
         // Arrange
-        when(albumRepository.findById(1L)).thenReturn(Optional.of(album));
+        when(albumRepository.findByIdAndUser(1L, mockUser)).thenReturn(Optional.of(album));
 
         // Act
         albumService.remover(1L);
 
         // Assert
-        verify(albumRepository).findById(1L);
+        verify(albumRepository).findByIdAndUser(1L, mockUser);
         verify(albumRepository).delete(album);
     }
 
@@ -240,7 +240,7 @@ class AlbumServiceTest {
         when(file.getContentType()).thenReturn("image/jpeg");
         when(file.getSize()).thenReturn(1024L * 1024L); // 1MB
 
-        when(albumRepository.findById(1L)).thenReturn(Optional.of(album));
+        when(albumRepository.findByIdAndUser(1L, mockUser)).thenReturn(Optional.of(album));
         when(minioService.upload(file, 1L)).thenReturn("test-object-name");
         when(minioService.generatePresignedUrl("test-object-name")).thenReturn("http://minio/presigned-url");
         when(albumCoverRepository.save(any(AlbumCover.class))).thenAnswer(i -> i.getArgument(0));
@@ -274,7 +274,7 @@ class AlbumServiceTest {
         when(file2.getContentType()).thenReturn("image/png");
         when(file2.getSize()).thenReturn(2048L * 1024L);
 
-        when(albumRepository.findById(1L)).thenReturn(Optional.of(album));
+        when(albumRepository.findByIdAndUser(1L, mockUser)).thenReturn(Optional.of(album));
         when(minioService.upload(any(MultipartFile.class), eq(1L)))
                 .thenReturn("object-1", "object-2");
         when(minioService.generatePresignedUrl(anyString()))
@@ -296,7 +296,7 @@ class AlbumServiceTest {
     @DisplayName("Deve lançar exceção ao fazer upload de arquivo vazio")
     void deveLancarExcecaoAoUploadDeListaVazia() {
         // Arrange
-        when(albumRepository.findById(1L)).thenReturn(Optional.of(album));
+        when(albumRepository.findByIdAndUser(1L, mockUser)).thenReturn(Optional.of(album));
 
         // Act & Assert
         FileValidationException exception = assertThrows(FileValidationException.class,
@@ -314,7 +314,7 @@ class AlbumServiceTest {
         when(file.isEmpty()).thenReturn(false);
         when(file.getContentType()).thenReturn("application/pdf"); // Tipo inválido
 
-        when(albumRepository.findById(1L)).thenReturn(Optional.of(album));
+        when(albumRepository.findByIdAndUser(1L, mockUser)).thenReturn(Optional.of(album));
 
         // Act & Assert
         FileValidationException exception = assertThrows(FileValidationException.class,
@@ -334,7 +334,7 @@ class AlbumServiceTest {
         when(file.getContentType()).thenReturn("image/jpeg");
         when(file.getSize()).thenReturn(6L * 1024L * 1024L); // 6MB
 
-        when(albumRepository.findById(1L)).thenReturn(Optional.of(album));
+        when(albumRepository.findByIdAndUser(1L, mockUser)).thenReturn(Optional.of(album));
 
         // Act & Assert
         FileValidationException exception = assertThrows(FileValidationException.class,
@@ -350,7 +350,7 @@ class AlbumServiceTest {
     void deveRetornarUrlDaCapa() {
         // Arrange
         album.setCoverObjectName("cover-object");
-        when(albumRepository.findById(1L)).thenReturn(Optional.of(album));
+        when(albumRepository.findByIdAndUser(1L, mockUser)).thenReturn(Optional.of(album));
         when(minioService.generatePresignedUrl("cover-object"))
                 .thenReturn("http://minio/cover-url");
 
@@ -368,7 +368,7 @@ class AlbumServiceTest {
     void deveRetornarNullQuandoAlbumNaoTemCapa() {
         // Arrange
         album.setCoverObjectName(null);
-        when(albumRepository.findById(1L)).thenReturn(Optional.of(album));
+        when(albumRepository.findByIdAndUser(1L, mockUser)).thenReturn(Optional.of(album));
 
         // Act
         String url = albumService.getCoverUrl(1L);
@@ -385,7 +385,7 @@ class AlbumServiceTest {
         AlbumCover cover1 = new AlbumCover(album, "object-1");
         AlbumCover cover2 = new AlbumCover(album, "object-2");
 
-        when(albumRepository.findById(1L)).thenReturn(Optional.of(album));
+        when(albumRepository.findByIdAndUser(1L, mockUser)).thenReturn(Optional.of(album));
         when(albumCoverRepository.findByAlbumId(1L))
                 .thenReturn(Arrays.asList(cover1, cover2));
         when(minioService.generatePresignedUrl("object-1")).thenReturn("http://url1");
@@ -410,7 +410,7 @@ class AlbumServiceTest {
         AlbumCover cover1 = new AlbumCover(album, "object-1");
         AlbumCover cover2 = new AlbumCover(album, "object-2");
 
-        when(albumRepository.findById(1L)).thenReturn(Optional.of(album));
+        when(albumRepository.findByIdAndUser(1L, mockUser)).thenReturn(Optional.of(album));
         when(albumCoverRepository.findByAlbumId(1L))
                 .thenReturn(Arrays.asList(cover1, cover2))
                 .thenReturn(List.of(cover2)); // Após deletar cover1
