@@ -76,24 +76,39 @@ export default function AuthForm() {
     // Buscar capas de álbuns da Deezer API usando proxy CORS
     useEffect(() => {
         const fetchCovers = async () => {
-            const covers: string[] = [];
+            const loadedCovers: string[] = [];
 
-            for (const id of albumIds) {
+            // Fazer todas as requisições em PARALELO para carregar mais rápido
+            const coverPromises = albumIds.map(async (id, index) => {
                 try {
                     // Usar proxy CORS para evitar bloqueio
                     const response = await fetch(`https://corsproxy.io/?https://api.deezer.com/album/${id}`);
                     const data = await response.json();
+
                     if (data.cover_big) {
-                        covers.push(data.cover_big);
+                        loadedCovers.push(data.cover_big);
+
+                        // Atualizar as capas visíveis conforme vão carregando
+                        // Exibir incrementalmente quando tivermos pelo menos 12 capas
+                        if (loadedCovers.length >= 12 && loadedCovers.length % 4 === 0) {
+                            const shuffled = shuffleArray([...loadedCovers]);
+                            setCurrentCovers(shuffled.slice(0, 12));
+                        }
                     }
+
+                    return data.cover_big || null;
                 } catch (error) {
                     console.error(`Erro ao buscar álbum ${id}:`, error);
+                    return null;
                 }
-            }
+            });
+
+            // Aguardar todas as requisições completarem
+            const results = await Promise.all(coverPromises);
+            const covers = results.filter(cover => cover !== null) as string[];
 
             setAllCovers(covers);
             const shuffled = shuffleArray(covers);
-            // Exibir as primeiras 12 capas
             setCurrentCovers(shuffled.slice(0, 12));
         };
 
