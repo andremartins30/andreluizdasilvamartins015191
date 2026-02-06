@@ -171,6 +171,17 @@ export default function AuthForm() {
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
 
+        // Validações no frontend antes de enviar
+        if (username.trim().length < 3) {
+            toast.error('O nome de usuário deve ter pelo menos 3 caracteres');
+            return;
+        }
+
+        if (password.length < 6) {
+            toast.error('A senha deve ter pelo menos 6 caracteres');
+            return;
+        }
+
         if (mode === 'register' && password !== confirmPassword) {
             toast.error('As senhas não conferem');
             return;
@@ -193,10 +204,26 @@ export default function AuthForm() {
                 setConfirmPassword('');
             }
         } catch (err: any) {
-            const errorMessage = err?.response?.data?.message ||
-                (mode === 'login'
-                    ? 'Usuário ou senha inválidos'
-                    : 'Erro ao registrar usuário');
+            // Tentar pegar a mensagem de erro específica do backend
+            let errorMessage = 'Erro ao processar requisição';
+
+            if (err?.response?.data?.message) {
+                errorMessage = err.response.data.message;
+            } else if (err?.response?.data?.error) {
+                errorMessage = err.response.data.error;
+            } else if (err?.response?.data) {
+                // Se a resposta for uma string diretamente
+                errorMessage = typeof err.response.data === 'string'
+                    ? err.response.data
+                    : JSON.stringify(err.response.data);
+            } else if (err?.message) {
+                errorMessage = err.message;
+            } else if (mode === 'login') {
+                errorMessage = 'Usuário ou senha inválidos';
+            } else {
+                errorMessage = 'Erro ao registrar usuário. Tente novamente.';
+            }
+
             toast.error(errorMessage);
         } finally {
             setLoading(false);
