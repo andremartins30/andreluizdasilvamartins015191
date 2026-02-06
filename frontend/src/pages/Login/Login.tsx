@@ -42,6 +42,12 @@ const albumIds = [
     12400334,
     6157080,
     11898198,
+    726319,
+    611222,
+    500742,
+    1440805,
+    13995252,
+
 ];
 
 export default function AuthForm() {
@@ -79,7 +85,7 @@ export default function AuthForm() {
             const loadedCovers: string[] = [];
 
             // Fazer todas as requisições em PARALELO para carregar mais rápido
-            const coverPromises = albumIds.map(async (id, index) => {
+            const coverPromises = albumIds.map(async (id) => {
                 try {
                     // Usar proxy CORS para evitar bloqueio
                     const response = await fetch(`https://corsproxy.io/?https://api.deezer.com/album/${id}`);
