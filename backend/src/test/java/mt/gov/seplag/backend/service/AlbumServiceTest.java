@@ -6,6 +6,7 @@ import mt.gov.seplag.backend.domain.album.AlbumCoverRepository;
 import mt.gov.seplag.backend.domain.album.AlbumRepository;
 import mt.gov.seplag.backend.domain.artist.Artist;
 import mt.gov.seplag.backend.domain.artist.ArtistRepository;
+import mt.gov.seplag.backend.domain.user.User;
 import mt.gov.seplag.backend.service.storage.MinioService;
 import mt.gov.seplag.backend.shared.exception.FileValidationException;
 import mt.gov.seplag.backend.shared.exception.NotFoundException;
@@ -53,24 +54,36 @@ class AlbumServiceTest {
     @Mock
     private AlbumCoverRepository albumCoverRepository;
 
+    @Mock
+    private UserService userService;
+
     @InjectMocks
     private AlbumService albumService;
 
     private Artist artist;
     private Album album;
+    private User mockUser;
 
     @BeforeEach
     void setUp() throws Exception {
-        artist = new Artist("Test Artist");
+        mockUser = new User("testuser", "password123");
+        java.lang.reflect.Field userIdField = User.class.getDeclaredField("id");
+        userIdField.setAccessible(true);
+        userIdField.set(mockUser, 1L);
+        
+        artist = new Artist("Test Artist", mockUser);
         // Usando Reflection para setar ID (entidade JPA não tem setter público)
         java.lang.reflect.Field artistIdField = Artist.class.getDeclaredField("id");
         artistIdField.setAccessible(true);
         artistIdField.set(artist, 1L);
 
-        album = new Album("Test Album", artist);
+        album = new Album("Test Album", artist, mockUser);
         java.lang.reflect.Field albumIdField = Album.class.getDeclaredField("id");
         albumIdField.setAccessible(true);
         albumIdField.set(album, 1L);
+        
+        // Mock padrão do usuário autenticado
+        when(userService.getCurrentUser()).thenReturn(mockUser);
     }
 
     @Test
@@ -80,7 +93,7 @@ class AlbumServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         Page<Album> albumPage = new PageImpl<>(List.of(album));
 
-        when(albumRepository.findAll(pageable)).thenReturn(albumPage);
+        when(albumRepository.findByUser(mockUser, pageable)).thenReturn(albumPage);
 
         // Act
         Page<AlbumResponseDTO> resultado = albumService.listar(null, pageable);
@@ -89,7 +102,7 @@ class AlbumServiceTest {
         assertNotNull(resultado);
         assertEquals(1, resultado.getTotalElements());
         assertEquals("Test Album", resultado.getContent().get(0).title());
-        verify(albumRepository).findAll(pageable);
+        verify(albumRepository).findByUser(mockUser, pageable);
     }
 
     @Test
@@ -99,7 +112,7 @@ class AlbumServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         Page<Album> albumPage = new PageImpl<>(List.of(album));
 
-        when(albumRepository.findByArtist_NameContainingIgnoreCase("Test", pageable))
+        when(albumRepository.findByUserAndArtist_NameContainingIgnoreCase(mockUser, "Test", pageable))
                 .thenReturn(albumPage);
 
         // Act
@@ -108,15 +121,15 @@ class AlbumServiceTest {
         // Assert
         assertNotNull(resultado);
         assertEquals(1, resultado.getTotalElements());
-        verify(albumRepository).findByArtist_NameContainingIgnoreCase("Test", pageable);
-        verify(albumRepository, never()).findAll(any(Pageable.class));
+        verify(albumRepository).findByUserAndArtist_NameContainingIgnoreCase(mockUser, "Test", pageable);
+        verify(albumRepository, never()).findByUser(eq(mockUser), any(Pageable.class));
     }
 
     @Test
     @DisplayName("Deve buscar álbum por ID com sucesso")
     void deveBuscarAlbumPorId() {
         // Arrange
-        when(albumRepository.findById(1L)).thenReturn(Optional.of(album));
+        when(albumRepository.findByIdAndUser(1L, mockUser)).thenReturn(Optional.of(album));
 
         // Act
         AlbumResponseDTO resultado = albumService.buscarPorId(1L);
@@ -126,21 +139,21 @@ class AlbumServiceTest {
         assertEquals(1L, resultado.id());
         assertEquals("Test Album", resultado.title());
         assertEquals("Test Artist", resultado.artistName());
-        verify(albumRepository).findById(1L);
+        verify(albumRepository).findByIdAndUser(1L, mockUser);
     }
 
     @Test
     @DisplayName("Deve lançar NotFoundException ao buscar álbum inexistente")
     void deveLancarExcecaoAoBuscarAlbumInexistente() {
         // Arrange
-        when(albumRepository.findById(999L)).thenReturn(Optional.empty());
+        when(albumRepository.findByIdAndUser(999L, mockUser)).thenReturn(Optional.empty());
 
         // Act & Assert
         NotFoundException exception = assertThrows(NotFoundException.class,
                 () -> albumService.buscarPorId(999L));
 
         assertEquals("Álbum não encontrado", exception.getMessage());
-        verify(albumRepository).findById(999L);
+        verify(albumRepository).findByIdAndUser(999L, mockUser);
     }
 
     @Test
@@ -149,7 +162,7 @@ class AlbumServiceTest {
         // Arrange
         AlbumRequestDTO dto = new AlbumRequestDTO("New Album", 1L);
 
-        when(artistRepository.findById(1L)).thenReturn(Optional.of(artist));
+        when(artistRepository.findByIdAndUser(1L, mockUser)).thenReturn(Optional.of(artist));
         when(albumRepository.save(any(Album.class))).thenReturn(album);
 
         // Act
@@ -158,7 +171,7 @@ class AlbumServiceTest {
         // Assert
         assertNotNull(resultado);
         assertEquals("Test Album", resultado.title());
-        verify(artistRepository).findById(1L);
+        verify(artistRepository).findByIdAndUser(1L, mockUser);
         verify(albumRepository).save(any(Album.class));
         verify(notificationService).notifyNewAlbum(
                 eq(album.getId()),
@@ -172,14 +185,14 @@ class AlbumServiceTest {
         // Arrange
         AlbumRequestDTO dto = new AlbumRequestDTO("New Album", 999L);
 
-        when(artistRepository.findById(999L)).thenReturn(Optional.empty());
+        when(artistRepository.findByIdAndUser(999L, mockUser)).thenReturn(Optional.empty());
 
         // Act & Assert
         NotFoundException exception = assertThrows(NotFoundException.class,
                 () -> albumService.criar(dto));
 
-        assertEquals("Artista não encontrado", exception.getMessage());
-        verify(artistRepository).findById(999L);
+        assertEquals("Artista não encontrado ou não pertence ao usuário", exception.getMessage());
+        verify(artistRepository).findByIdAndUser(999L, mockUser);
         verify(albumRepository, never()).save(any(Album.class));
         verify(notificationService, never()).notifyNewAlbum(anyLong(), anyString(), anyString());
     }
@@ -416,7 +429,7 @@ class AlbumServiceTest {
     @DisplayName("Deve lançar exceção ao deletar capa inexistente")
     void deveLancarExcecaoAoDeletarCapaInexistente() {
         // Arrange
-        when(albumRepository.findById(1L)).thenReturn(Optional.of(album));
+        when(albumRepository.findByIdAndUser(1L, mockUser)).thenReturn(Optional.of(album));
         when(albumCoverRepository.findByAlbumId(1L))
                 .thenReturn(Collections.emptyList());
 
@@ -436,7 +449,7 @@ class AlbumServiceTest {
         album.setCoverObjectName("object-1");
         AlbumCover cover1 = new AlbumCover(album, "object-1");
 
-        when(albumRepository.findById(1L)).thenReturn(Optional.of(album));
+        when(albumRepository.findByIdAndUser(1L, mockUser)).thenReturn(Optional.of(album));
         when(albumCoverRepository.findByAlbumId(1L))
                 .thenReturn(List.of(cover1))
                 .thenReturn(Collections.emptyList()); // Após deletar
@@ -448,5 +461,35 @@ class AlbumServiceTest {
         verify(minioService).removeObject("object-1");
         verify(albumCoverRepository).delete(cover1);
         verify(albumRepository).save(album);
+    }
+
+    @Test
+    @DisplayName("Deve remover todos os álbuns do usuário autenticado")
+    void deveRemoverTodosAlbunsDoUsuario() {
+        // Arrange
+        when(albumRepository.countByUser(mockUser)).thenReturn(5L);
+
+        // Act
+        long count = albumService.removerTodos();
+
+        // Assert
+        assertEquals(5L, count);
+        verify(albumRepository).countByUser(mockUser);
+        verify(albumRepository).deleteAllByUser(mockUser);
+    }
+
+    @Test
+    @DisplayName("Deve retornar 0 ao tentar remover todos quando não há álbuns")
+    void deveRetornarZeroQuandoNaoHaAlbuns() {
+        // Arrange
+        when(albumRepository.countByUser(mockUser)).thenReturn(0L);
+
+        // Act
+        long count = albumService.removerTodos();
+
+        // Assert
+        assertEquals(0L, count);
+        verify(albumRepository).countByUser(mockUser);
+        verify(albumRepository, never()).deleteAllByUser(any());
     }
 }

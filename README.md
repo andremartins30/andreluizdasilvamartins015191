@@ -179,6 +179,37 @@ Sistema de sincronização de regionais da Polícia Civil com complexidade algor
 - Lazy loading de rotas
 - Tratamento centralizado de erros
 
+### Isolamento de Dados por Usuário
+- **Isolamento completo**: Cada usuário visualiza apenas artistas e álbuns criados por ele
+- **Validação de propriedade**: Endpoints validam automaticamente se o recurso pertence ao usuário autenticado
+- **Segurança aprimorada**: Impossível acessar ou modificar dados de outros usuários via API
+- **Endpoint de limpeza**: `DELETE /api/v1/albums?confirm=true` remove todos os álbuns do usuário logado
+- **Dados compartilhados**: Seed inicial (4 artistas do edital) inseridos sem user_id para acesso inicial
+- **Migration V8**: Adiciona coluna `user_id` nas tabelas `artists` e `albums` com foreign keys e índices otimizados
+
+**Benefícios:**
+- Maior privacidade e segurança dos dados
+- Usuários podem gerenciar sua própria biblioteca musical
+- Suporte multi-tenant sem configurações extras
+- Facilita limpeza e reset de dados pessoais
+
+**Uso do endpoint de limpeza:**
+```bash
+# Remove todos os álbuns do usuário autenticado
+DELETE /api/v1/albums?confirm=true
+Authorization: Bearer <token>
+
+# Resposta:
+{
+  "status": 200,
+  "message": "Álbuns removidos com sucesso",
+  "data": {
+    "deletedCount": 15,
+    "message": "15 álbum(ns) removido(s) com sucesso"
+  }
+}
+```
+
 ## Arquitetura
 
 ### Backend - Arquitetura em Camadas
