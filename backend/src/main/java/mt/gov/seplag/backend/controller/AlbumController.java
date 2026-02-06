@@ -72,6 +72,43 @@ public class AlbumController {
         service.remover(id);
     }
 
+    @Operation(
+        summary = "Remove todos os álbuns do usuário autenticado",
+        description = "Remove todos os álbuns pertencentes ao usuário autenticado. Requer parâmetro de confirmação 'confirm=true' para evitar deleções acidentais."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Álbuns removidos com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Parâmetro de confirmação não fornecido"),
+            @ApiResponse(responseCode = "401", description = "Usuário não autenticado")
+    })
+    @DeleteMapping
+    public ResponseEntity<ApiSuccessResponse<java.util.Map<String, Object>>> removerTodos(
+            @RequestParam(required = false, defaultValue = "false") boolean confirm,
+            HttpServletRequest http) {
+        
+        if (!confirm) {
+            return ResponseEntity.badRequest()
+                .body(new ApiSuccessResponse<>(
+                    400,
+                    "Confirmação necessária. Use o parâmetro 'confirm=true' para confirmar a remoção de todos os álbuns.",
+                    null,
+                    http.getRequestURI()));
+        }
+        
+        long count = service.removerTodos();
+        
+        java.util.Map<String, Object> data = new java.util.HashMap<>();
+        data.put("deletedCount", count);
+        data.put("message", count > 0 ? count + " álbum(ns) removido(s) com sucesso" : "Nenhum álbum encontrado para remover");
+        
+        return ResponseEntity.ok()
+            .body(new ApiSuccessResponse<>(
+                200,
+                count > 0 ? "Álbuns removidos com sucesso" : "Nenhum álbum encontrado",
+                data,
+                http.getRequestURI()));
+    }
+
     @Operation(summary = "Upload da capa do álbum")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Capa enviada"),

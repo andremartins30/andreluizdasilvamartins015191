@@ -5,6 +5,7 @@ import mt.gov.seplag.backend.domain.album.AlbumRepository;
 import mt.gov.seplag.backend.domain.album.AlbumCoverRepository;
 import mt.gov.seplag.backend.domain.artist.Artist;
 import mt.gov.seplag.backend.domain.artist.ArtistRepository;
+import mt.gov.seplag.backend.domain.user.User;
 import mt.gov.seplag.backend.service.storage.MinioService;
 import mt.gov.seplag.backend.web.album.AlbumRequestDTO;
 import mt.gov.seplag.backend.web.album.AlbumResponseDTO;
@@ -12,9 +13,11 @@ import mt.gov.seplag.backend.web.album.AlbumCoverResDTO;
 import mt.gov.seplag.backend.shared.exception.NotFoundException;
 import mt.gov.seplag.backend.shared.exception.BusinessException;
 import mt.gov.seplag.backend.shared.exception.FileValidationException;
+import mt.gov.seplag.backend.shared.exception.ForbiddenException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -27,26 +30,30 @@ public class AlbumService {
     private final MinioService minioService;
     private final AlbumNotificationService notificationService;
     private final AlbumCoverRepository albumCoverRepository;
+    private final UserService userService;
 
     public AlbumService(MinioService minioService,
             AlbumRepository albumRepository,
             ArtistRepository artistRepository,
             AlbumNotificationService notificationService,
-            AlbumCoverRepository albumCoverRepository) {
+            AlbumCoverRepository albumCoverRepository,
+            UserService userService) {
         this.minioService = minioService;
         this.albumRepository = albumRepository;
         this.artistRepository = artistRepository;
         this.notificationService = notificationService;
         this.albumCoverRepository = albumCoverRepository;
+        this.userService = userService;
     }
 
     public Page<AlbumResponseDTO> listar(String artist, Pageable pageable) {
+        User currentUser = userService.getCurrentUser();
         Page<Album> albums;
 
         if (artist != null && !artist.isBlank()) {
-            albums = albumRepository.findByArtist_NameContainingIgnoreCase(artist, pageable);
+            albums = albumRepository.findByUserAndArtist_NameContainingIgnoreCase(currentUser, artist, pageable);
         } else {
-            albums = albumRepository.findAll(pageable);
+            albums = albumRepository.findByUser(currentUser, pageable);
         }
 
         return albums.map(a -> new AlbumResponseDTO(
@@ -57,17 +64,21 @@ public class AlbumService {
     }
 
     public AlbumResponseDTO buscarPorId(Long id) {
-        Album album = albumRepository.findById(id)
+        User currentUser = userService.getCurrentUser();
+        
+        Album album = albumRepository.findByIdAndUser(id, currentUser)
                 .orElseThrow(() -> new NotFoundException("Álbum não encontrado"));
 
         return toResponse(album);
     }
 
     public AlbumResponseDTO criar(AlbumRequestDTO dto) {
-        Artist artist = artistRepository.findById(dto.artistId())
-                .orElseThrow(() -> new NotFoundException("Artista não encontrado"));
+        User currentUser = userService.getCurrentUser();
+        
+        Artist artist = artistRepository.findByIdAndUser(dto.artistId(), currentUser)
+                .orElseThrow(() -> new NotFoundException("Artista não encontrado ou não pertence ao usuário"));
 
-        Album album = new Album(dto.title(), artist);
+        Album album = new Album(dto.title(), artist, currentUser);
 
         Album salvo = albumRepository.save(album);
 
@@ -78,11 +89,13 @@ public class AlbumService {
     }
 
     public AlbumResponseDTO atualizar(Long id, AlbumRequestDTO dto) {
-        Album album = albumRepository.findById(id)
+        User currentUser = userService.getCurrentUser();
+        
+        Album album = albumRepository.findByIdAndUser(id, currentUser)
                 .orElseThrow(() -> new NotFoundException("Álbum não encontrado"));
 
-        Artist artist = artistRepository.findById(dto.artistId())
-                .orElseThrow(() -> new NotFoundException("Artista não encontrado"));
+        Artist artist = artistRepository.findByIdAndUser(dto.artistId(), currentUser)
+                .orElseThrow(() -> new NotFoundException("Artista não encontrado ou não pertence ao usuário"));
 
         album.setTitle(dto.title());
         album.setArtist(artist);
@@ -92,11 +105,31 @@ public class AlbumService {
         return toResponse(atualizado);
     }
 
+    @Transactional
     public void remover(Long id) {
-        Album album = albumRepository.findById(id)
+        User currentUser = userService.getCurrentUser();
+        
+        Album album = albumRepository.findByIdAndUser(id, currentUser)
                 .orElseThrow(() -> new NotFoundException("Álbum não encontrado"));
 
         albumRepository.delete(album);
+    }
+
+    /**
+     * Remove todos os álbuns do usuário autenticado
+     * @return quantidade de álbuns removidos
+     */
+    @Transactional
+    public long removerTodos() {
+        User currentUser = userService.getCurrentUser();
+        
+        long count = albumRepository.countByUser(currentUser);
+        
+        if (count > 0) {
+            albumRepository.deleteAllByUser(currentUser);
+        }
+        
+        return count;
     }
 
     private AlbumResponseDTO toResponse(Album album) {
@@ -113,7 +146,9 @@ public class AlbumService {
     }
 
     public AlbumCoverResDTO uploadCovers(Long albumId, List<MultipartFile> files) {
-        Album album = albumRepository.findById(albumId)
+        User currentUser = userService.getCurrentUser();
+        
+        Album album = albumRepository.findByIdAndUser(albumId, currentUser)
                 .orElseThrow(() -> new NotFoundException("Álbum não encontrado"));
 
         if (files == null || files.isEmpty()) {
@@ -166,19 +201,23 @@ public class AlbumService {
     }
 
     public String getCoverUrl(Long id) {
-        Album album = albumRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Álbum não encontrado"));
+        User currentUser = userService.getCurrentUser();
+        
+        Album album = albumRepository.findByIdAndUser(id, currentUser)
+                .orElseThrow(() -> new ForbiddenException("Álbum não encontrado ou acesso negado"));
 
         if (album.getCoverObjectName() == null) {
-            return null; // Retorna null ao invés de erro
+            return null;
         }
 
         return minioService.generatePresignedUrl(album.getCoverObjectName());
     }
 
     public java.util.List<String> getAllCoverUrls(Long id) {
-        Album album = albumRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Álbum não encontrado"));
+        User currentUser = userService.getCurrentUser();
+        
+        Album album = albumRepository.findByIdAndUser(id, currentUser)
+                .orElseThrow(() -> new ForbiddenException("Álbum não encontrado ou acesso negado"));
 
         java.util.List<mt.gov.seplag.backend.domain.album.AlbumCover> covers = albumCoverRepository.findByAlbumId(id);
 
@@ -188,8 +227,10 @@ public class AlbumService {
     }
 
     public void deleteCover(Long albumId, String objectName) {
-        Album album = albumRepository.findById(albumId)
-                .orElseThrow(() -> new NotFoundException("Álbum não encontrado"));
+        User currentUser = userService.getCurrentUser();
+        
+        Album album = albumRepository.findByIdAndUser(albumId, currentUser)
+                .orElseThrow(() -> new ForbiddenException("Álbum não encontrado ou acesso negado"));
 
         // Buscar a capa pelo objectName
         java.util.List<mt.gov.seplag.backend.domain.album.AlbumCover> covers = albumCoverRepository

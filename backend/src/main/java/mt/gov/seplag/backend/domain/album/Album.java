@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import mt.gov.seplag.backend.domain.artist.Artist;
+import mt.gov.seplag.backend.domain.user.User;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +22,10 @@ public class Album {
     @ManyToOne
     private Artist artist;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
+
     @OneToMany(mappedBy = "album", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AlbumCover> covers = new ArrayList<>();
 
@@ -32,6 +37,12 @@ public class Album {
     public Album(String title, Artist artist) {
         this.title = title;
         this.artist = artist;
+    }
+
+    public Album(String title, Artist artist, User user) {
+        this.title = title;
+        this.artist = artist;
+        this.user = user;
     }
 
     public Long getId() {
@@ -75,5 +86,12 @@ public class Album {
     public void setCoverObjectName(String coverObjectName) {
         this.coverObjectName = coverObjectName;
     }
-    
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
 }

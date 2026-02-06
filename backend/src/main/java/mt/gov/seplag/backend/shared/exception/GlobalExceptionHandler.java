@@ -52,6 +52,34 @@ public class GlobalExceptionHandler {
                 ));
         }
 
+        @ExceptionHandler(UnauthorizedException.class)
+        public ResponseEntity<ApiErrorResponse> handleUnauthorized(
+                UnauthorizedException ex,
+                HttpServletRequest request
+        ) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new ApiErrorResponse(
+                        401,
+                        "Não autorizado",
+                        List.of(ex.getMessage()),
+                        request.getRequestURI()
+                ));
+        }
+
+        @ExceptionHandler(ForbiddenException.class)
+        public ResponseEntity<ApiErrorResponse> handleForbidden(
+                ForbiddenException ex,
+                HttpServletRequest request
+        ) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ApiErrorResponse(
+                        403,
+                        "Acesso negado",
+                        List.of(ex.getMessage()),
+                        request.getRequestURI()
+                ));
+        }
+
         @ExceptionHandler(MethodArgumentNotValidException.class)
         public ResponseEntity<ApiErrorResponse> handleValidation(
                 MethodArgumentNotValidException ex,

@@ -1,0 +1,7 @@
+package mt.gov.seplag.backend.shared.exception;
+
+public class UnauthorizedException extends RuntimeException {
+    public UnauthorizedException(String message) {
+        super(message);
+    }
+}
