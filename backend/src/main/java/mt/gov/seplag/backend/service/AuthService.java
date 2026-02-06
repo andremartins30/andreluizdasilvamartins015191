@@ -20,13 +20,16 @@ public class AuthService {
     private final UserRepository repository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final DefaultDataService defaultDataService;
 
     public AuthService(UserRepository repository,
-                    PasswordEncoder passwordEncoder,
-                    JwtService jwtService) {
+            PasswordEncoder passwordEncoder,
+            JwtService jwtService,
+            DefaultDataService defaultDataService) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.defaultDataService = defaultDataService;
     }
 
     public AuthResponseDTO register(RegisterRequestDTO request) {
@@ -41,6 +44,9 @@ public class AuthService {
         user.setRole("USER");
 
         repository.save(user);
+
+        // Criar dados padrão para o novo usuário
+        defaultDataService.createDefaultDataForUser(user);
 
         String accessToken = jwtService.generateToken(user.getUsername());
         String refreshToken = jwtService.generateRefreshToken(user.getUsername());
